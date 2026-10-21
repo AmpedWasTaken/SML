@@ -29,9 +29,9 @@ var inlineProps = map[string]map[string]bool{
 	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
 	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true},
 	"divider":       {"variant": true},
-	"button":        {"label": true, "page": true, "command": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
-	"link":          {"label": true, "page": true, "command": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
-	"plugin-action": {"label": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+	"button":        {"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+	"link":          {"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+	"plugin-action": {"label": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 }
 
 func validateStyleAttribute(key, value string) error {

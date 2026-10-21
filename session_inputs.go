@@ -20,7 +20,7 @@ func validateSessionInput(n Node) error {
 	}
 	for name := range n.Attrs {
 		switch name {
-		case "label", "key", "placeholder", "min", "max":
+		case "label", "key", "id", "placeholder", "min", "max":
 		default:
 			return fmt.Errorf("unsupported SML input attribute %q", name)
 		}
