@@ -3,7 +3,6 @@ package sml
 import (
 	"fmt"
 	"strings"
-	"unicode/utf8"
 )
 
 // SML v3 styling is defined directly on visual elements. No CSS-like
