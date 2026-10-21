@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 )
 
 // Hotspot uses logical terminal cell offsets in the rendered SML content.
