@@ -67,6 +67,9 @@ Load the entire tree with `sml.LoadDir("assets")`. `<include name="header"/>` re
 
 ## Tables and media
 
+A `<table>` supports a **bounded table-specific** `style` preset (`compact`, `compact-lite`, `compact-classic`, `default`, `markdown`, `rounded`, `unicode`, or `ascii`). This is distinct from generic inline styling: a `style` attribute on other components is rejected.
+
+
 `table` supports data columns, sorting, filtering and bounded pages; supply table data through host-provided bindings (typically JSON data according to the table schema). `image` and `gif` decode local files under `assets/media/` into text-cell artwork, not true terminal pixels. For detailed examples, consult the original engine tests in this repository.
 
 ## Interaction
