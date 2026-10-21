@@ -249,99 +249,8 @@ func validateUIChildren(nodes []Node, screen, parent string) error {
 	return nil
 }
 
-// collectControls walks only the branch that the renderer can display.
-// A hidden control must never inherit a hotspot from visible text with the
-// same label: a copied label is not permission to invoke an invisible action.
-func (v View) collectControls(nodes []Node, values map[string]string, depth int, dst *[]Node) error {
-	if depth > maxDepth {
-		return errors.New("SML control include depth exceeded")
-	}
-	for _, n := range nodes {
-		switch n.Kind {
-		case "button", "link", "plugin-action":
-			if controlEnabled(n, values) {
-				*dst = append(*dst, n)
-			}
-		case "toggle", "choice", "input", "number":
-			*dst = append(*dst, n)
-		case "derive", "otherwise":
-			continue
-		case "if", "when":
-			field := n.Attr("field", n.Attr("value", ""))
-			value := values[field]
-			matched := false
-			if n.Kind == "if" {
-				matched = value == n.Attr("equals", "true")
-			} else {
-				matched = value != "" && value != "0" && value != "false" && value != "no"
-			}
-			primary := n.Children
-			var alternative []Node
-			for index, child := range n.Children {
-				if child.Kind == "otherwise" {
-					primary, alternative = n.Children[:index], child.Children
-					break
-				}
-			}
-			visible := primary
-			if !matched {
-				visible = alternative
-			}
-			if err := v.collectControls(visible, values, depth+1, dst); err != nil {
-				return err
-			}
-		case "empty":
-			if values[n.Attr("field", "")] == "" {
-				if err := v.collectControls(n.Children, values, depth+1, dst); err != nil {
-					return err
-				}
-			}
-		case "use":
-			nodes, local, err := v.expandUse(n, values)
-			if err != nil {
-				return err
-			}
-			if err := v.collectControls(nodes, local, depth+1, dst); err != nil {
-				return err
-			}
-		case "include":
-			part, err := v.component(n.Attr("name", ""))
-			if err != nil {
-				return err
-			}
-			if err := v.collectControls(part.Children, values, depth+1, dst); err != nil {
-				return err
-			}
-		case "repeat":
-			key := n.Attr("source", "")
-			if values[key] == "" {
-				continue
-			}
-			alias := n.Attr("as", "item")
-			items := strings.Split(values[key], ",")
-			limit := min(len(items), boundedInt(n.Attr("limit", "30"), 30, 0, 100))
-			for i := 0; i < limit; i++ {
-				local := make(map[string]string, len(values)+1)
-				for k, val := range values {
-					local[k] = val
-				}
-				local[alias] = strings.TrimSpace(items[i])
-				if err := v.collectControls(n.Children, local, depth+1, dst); err != nil {
-					return err
-				}
-			}
-		default:
-			if err := v.collectControls(n.Children, values, depth+1, dst); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// RenderInteractive is a side-effect-free render plus a geometry index. Labels
-// are matched against the final rendered lines (including nested grid/panel).
-// Only controls still visible after truncation get a hotspot.
+// RenderInteractive preserves the legacy signature while delegating all layout
+// and hit testing to the structural cell renderer. No label matching is used.
 func (v View) RenderInteractive(values map[string]string, width int) ([]string, []Hotspot, bool) {
 	frame, err := v.RenderFrame(values, width)
 	if err != nil {
@@ -360,7 +269,7 @@ func (v View) HasAnimation() bool {
 			if node.Kind == "gif" {
 				return true
 			}
-			if node.Kind == "include" {
+			if node.Kind == "include" || node.Kind == "use" {
 				if part, err := v.component(node.Attr("name", "")); err == nil && visit(part.Children, depth+1) {
 					return true
 				}

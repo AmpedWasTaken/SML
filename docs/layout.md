@@ -5,7 +5,7 @@ SML provides two render paths for compatibility:
 - `RenderChecked(values, width)` / `RenderWidth`: preserve v1-v3 string-rendering semantics.
 - **`RenderFrame(values, width)`**: render a structural layout with Unicode grapheme-aware terminal cell measurement, text wrapping and exact node-derived interaction coordinates.
 
-The frame API is currently opt-in so existing Sentinel-style views remain compatible.
+The frame API is currently opt-in so existing Sentinel-style views remain compatible. `RenderInteractive` now uses structural geometry internally.
 
 ```go
 frame, err := view.RenderFrame(values, 80)
