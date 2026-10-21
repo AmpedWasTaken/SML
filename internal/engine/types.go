@@ -1,6 +1,6 @@
-// Package sml parses and renders declarative terminal views.
+// Package engine implements parsing, rendering, and validated terminal interactions.
 // SML has no embedded code execution.
-package sml
+package engine
 
 const maxFileSize = 64 * 1024
 const maxDepth = 16
