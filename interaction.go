@@ -22,8 +22,8 @@ type Hotspot struct {
 	Options      []string
 	PluginID     string
 	PluginAction string
-	Action string // Generic host action; never executed by SML.
-	ID string // Explicit control ID or generated layout path.
+	Action       string // Generic host action; never executed by SML.
+	ID           string // Explicit control ID or generated layout path.
 	Arg          string
 	Source       string
 	Bindings     string
@@ -94,7 +94,9 @@ func validateControl(n Node) error {
 	if n.Kind != "plugin-action" {
 		count := 0
 		for _, target := range []string{page, command, action} {
-			if target != "" { count++ }
+			if target != "" {
+				count++
+			}
 		}
 		if count != 1 {
 			return errors.New("button/link requires exactly one of page, command or action")
@@ -297,8 +299,12 @@ func (v View) collectControls(nodes []Node, values map[string]string, depth int,
 			}
 		case "use":
 			nodes, local, err := v.expandUse(n, values)
-			if err != nil { return err }
-			if err := v.collectControls(nodes, local, depth+1, dst); err != nil { return err }
+			if err != nil {
+				return err
+			}
+			if err := v.collectControls(nodes, local, depth+1, dst); err != nil {
+				return err
+			}
 		case "include":
 			part, err := v.component(n.Attr("name", ""))
 			if err != nil {
@@ -337,10 +343,12 @@ func (v View) collectControls(nodes []Node, values map[string]string, depth int,
 // RenderInteractive is a side-effect-free render plus a geometry index. Labels
 // are matched against the final rendered lines (including nested grid/panel).
 // Only controls still visible after truncation get a hotspot.
-func (v View) RenderInteractive(values map[string]string,width int)([]string,[]Hotspot,bool){
-    frame,err:=v.RenderFrame(values,width)
-    if err!=nil{return []string{"SML render error: "+safe(err.Error())},nil,false}
-    return frame.Lines,frame.Hotspots,v.HasAnimation()
+func (v View) RenderInteractive(values map[string]string, width int) ([]string, []Hotspot, bool) {
+	frame, err := v.RenderFrame(values, width)
+	if err != nil {
+		return []string{"SML render error: " + safe(err.Error())}, nil, false
+	}
+	return frame.Lines, frame.Hotspots, v.HasAnimation()
 }
 
 func (v View) HasAnimation() bool {
