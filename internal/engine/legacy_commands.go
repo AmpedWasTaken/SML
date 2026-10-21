@@ -1,4 +1,4 @@
-package sml
+package engine
 
 // legacyReadOnlyCommands is preserved for pre-extraction SML views.
 // New applications should prefer host-owned action identifiers instead of
