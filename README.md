@@ -207,6 +207,8 @@ The project includes Go tests and GitHub CI. The published package does not cont
 
 Issues, examples, bug reports, and PRs are welcome. Please include a small reproducer for rendering bugs, test both narrow and wide terminals, and document any language-level changes.
 
+**Want to contribute?** The [community roadmap](docs/roadmap.md) organizes 50 scoped issues across parsing, responsive layout, components, forms, accessibility, editor tooling and examples. Start with a [good first issue](https://github.com/AmpedWasTaken/SML/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22good%20first%20issue%22), or browse [help-wanted issues](https://github.com/AmpedWasTaken/SML/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22help%20wanted%22).
+
 Start with [CONTRIBUTING.md](CONTRIBUTING.md), report bugs using [issue templates](.github/ISSUE_TEMPLATE/), and see [SUPPORT.md](SUPPORT.md) for help. Read [the changelog](CHANGELOG.md), [project structure](docs/project-structure.md), [security policy](SECURITY.md), and [code of conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ## License
