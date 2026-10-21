@@ -251,11 +251,11 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 func truncateCell(s string, w int) string {
 	s = safe(s)
 	s = strings.NewReplacer("\r", " ", "\n", " ", "\t", " ").Replace(s)
-	if utf8.RuneCountInString(s) <= w {
+	if CellWidth(s) <= w {
 		return s
 	}
 	if w < 2 {
 		return trim(s, w)
 	}
-	return trim(s, w-1) + "…"
+	return ClipCells(s, w-1) + "…"
 }

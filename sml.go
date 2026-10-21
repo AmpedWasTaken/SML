@@ -31,6 +31,7 @@ var allowed = map[string]bool{
 	"gauge": true, "sparkline": true, "plugin-action": true,
 	"toggle": true, "choice": true, "input": true, "number": true,
 	"section": true, "field": true, "empty": true, "derive": true, "otherwise": true,
+	"use": true, "slot": true, "fill": true,
 }
 
 // Node is a checked presentation element, not an executable instruction.
@@ -138,6 +139,9 @@ func Parse(data []byte) (View, error) {
 	if version != "3" && requiresSML3(view.Nodes) {
 		return View{}, errors.New("reactive SML components require version 3")
 	}
+	if err := validateComponentSyntax(view.Nodes); err != nil {
+		return View{}, err
+	}
 	if err := validateUI(view.Nodes, name); err != nil {
 		return View{}, err
 	}
@@ -194,18 +198,10 @@ func trim(s string, max int) string {
 	if max <= 0 {
 		return ""
 	}
-	r := []rune(s)
-	if len(r) > max {
-		return string(r[:max])
-	}
-	return s
+	return ClipCells(s, max)
 }
 func pad(s string, w int) string {
-	n := utf8.RuneCountInString(s)
-	if n >= w {
-		return trim(s, w)
-	}
-	return s + strings.Repeat(" ", w-n)
+	return PadCells(s, w)
 }
 func (v View) component(name string) (Node, error) {
 	if !validName.MatchString(name) {
@@ -274,6 +270,14 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 	switch n.Kind {
 	case "gradient", "derive":
 		return nil, nil
+	case "use":
+		nodes, local, err := v.expandUse(n, values)
+		if err != nil {
+			return nil, err
+		}
+		return v.lines(nodes, local, width, depth+1)
+	case "slot", "fill":
+		return nil, errors.New("unexpanded SML slot or fill")
 	case "button", "link", "plugin-action":
 		return []string{renderActionControl(n, values, width)}, nil
 	case "toggle", "choice":
@@ -455,7 +459,7 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		for _, line := range strings.Split(strings.TrimRight(safe(string(b)), "\r\n"), "\n") {
 			line = trim(line, width)
 			raw = append(raw, line)
-			if w := utf8.RuneCountInString(line); w > maxW {
+			if w := CellWidth(line); w > maxW {
 				maxW = w
 			}
 		}
@@ -569,7 +573,7 @@ func validateIncludes(v View, nodes []Node, depth int, seen map[string]bool) err
 		return errors.New("SML include depth exceeded")
 	}
 	for _, node := range nodes {
-		if node.Kind == "include" {
+		if node.Kind == "include" || node.Kind == "use" {
 			name := node.Attr("name", "")
 			if seen[name] {
 				return fmt.Errorf("SML include cycle: %s", name)

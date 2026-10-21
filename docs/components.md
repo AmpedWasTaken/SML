@@ -110,3 +110,41 @@ Media uses local, bounded files in `assets/media/`, rendered as text-cell lumina
 ```
 
 Appearance gradient declarations use `<screen name="appearance">` with `<gradient .../>` elements, parsed into `terminal.GradientStyle`. Painting colored text is the responsibility of your application.
+
+
+## Custom components with props and slots
+
+SML supports typed *string props* and named slots in reusable component files. For example, put this in `assets/components/stat-card.sml`:
+
+```xml
+<component name="stat-card" props="title:string,value:string">
+  <panel title="{{props.title}}">
+    <metric label="Current" value="{{props.value}}"/>
+    <slot name="footer">
+      <text>Default footer</text>
+    </slot>
+  </panel>
+</component>
+```
+
+Use it from a view:
+
+```xml
+<screen name="dashboard" version="3">
+  <use name="stat-card" title="Active users" value="{{app.users}}">
+    <fill slot="footer"><badge>Live</badge></fill>
+  </use>
+</screen>
+```
+
+Props are declared explicitly, limited in size, and rendered as data. Missing or undeclared props and unknown fill slots are errors. Slot contents do not execute code. Use `LoadDir` to validate the full component tree, including cycle detection.
+
+## Host actions and element identifiers
+
+Prefer generic `action` IDs for standalone applications:
+
+```xml
+<button id="refresh" label="Refresh" action="metrics.refresh"/>
+```
+
+`RenderFrame` and `RenderInteractive` return a `Hotspot` with `ID` and `Action`. Applications handle the action after their own authorization checks. Legacy `command` and `page` targets remain for existing SML v1–v3 views; they are not a general-purpose execution interface.

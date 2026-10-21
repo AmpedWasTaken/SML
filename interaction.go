@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 )
 
 // Hotspot uses logical terminal cell offsets in the rendered SML content.
@@ -22,6 +21,8 @@ type Hotspot struct {
 	Options      []string
 	PluginID     string
 	PluginAction string
+	Action       string // Generic host action; never executed by SML.
+	ID           string // Explicit control ID or generated layout path.
 	Arg          string
 	Source       string
 	Bindings     string
@@ -33,6 +34,7 @@ var bindingName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]{0,95}$`)
 var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
 var uiLabel = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _./:+-]{0,46}$`)
+var actionID = regexp.MustCompile("^[a-z][a-z0-9_.-]{0,63}$")
 var safeCommands = map[string]bool{
 	"help": true, "status": true, "whoami": true, "jobs": true,
 	"lab": true, "lab methods": true, "lab ongoing": true, "lab history": true,
@@ -48,9 +50,9 @@ func validateControl(n Node) error {
 	if len(n.Children) != 0 || strings.TrimSpace(n.Text) != "" {
 		return errors.New("interactive SML elements must be empty")
 	}
-	allowed := map[string]bool{"label": true, "page": true, "command": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
+	allowed := map[string]bool{"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
 	if n.Kind == "plugin-action" {
-		allowed = map[string]bool{"label": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "style": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
+		allowed = map[string]bool{"label": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "style": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
 		if !validName.MatchString(n.Attr("plugin", "")) || !validName.MatchString(n.Attr("action", "")) {
 			return errors.New("invalid SML plugin action identity")
 		}
@@ -84,8 +86,23 @@ func validateControl(n Node) error {
 	}
 	page := n.Attr("page", "")
 	command := n.Attr("command", "")
-	if n.Kind != "plugin-action" && (page == "") == (command == "") {
-		return errors.New("button/link needs exactly one page or command action")
+	action := n.Attr("action", "")
+	if id := n.Attr("id", ""); id != "" && !actionID.MatchString(id) {
+		return errors.New("invalid interactive element id")
+	}
+	if n.Kind != "plugin-action" {
+		count := 0
+		for _, target := range []string{page, command, action} {
+			if target != "" {
+				count++
+			}
+		}
+		if count != 1 {
+			return errors.New("button/link requires exactly one of page, command or action")
+		}
+		if action != "" && !actionID.MatchString(action) {
+			return errors.New("invalid generic action identifier")
+		}
 	}
 	if page != "" && !validName.MatchString(page) {
 		return errors.New("invalid page destination")
@@ -232,140 +249,14 @@ func validateUIChildren(nodes []Node, screen, parent string) error {
 	return nil
 }
 
-// collectControls walks only the branch that the renderer can display.
-// A hidden control must never inherit a hotspot from visible text with the
-// same label: a copied label is not permission to invoke an invisible action.
-func (v View) collectControls(nodes []Node, values map[string]string, depth int, dst *[]Node) error {
-	if depth > maxDepth {
-		return errors.New("SML control include depth exceeded")
-	}
-	for _, n := range nodes {
-		switch n.Kind {
-		case "button", "link", "plugin-action":
-			if controlEnabled(n, values) {
-				*dst = append(*dst, n)
-			}
-		case "toggle", "choice", "input", "number":
-			*dst = append(*dst, n)
-		case "derive", "otherwise":
-			continue
-		case "if", "when":
-			field := n.Attr("field", n.Attr("value", ""))
-			value := values[field]
-			matched := false
-			if n.Kind == "if" {
-				matched = value == n.Attr("equals", "true")
-			} else {
-				matched = value != "" && value != "0" && value != "false" && value != "no"
-			}
-			primary := n.Children
-			var alternative []Node
-			for index, child := range n.Children {
-				if child.Kind == "otherwise" {
-					primary, alternative = n.Children[:index], child.Children
-					break
-				}
-			}
-			visible := primary
-			if !matched {
-				visible = alternative
-			}
-			if err := v.collectControls(visible, values, depth+1, dst); err != nil {
-				return err
-			}
-		case "empty":
-			if values[n.Attr("field", "")] == "" {
-				if err := v.collectControls(n.Children, values, depth+1, dst); err != nil {
-					return err
-				}
-			}
-		case "include":
-			part, err := v.component(n.Attr("name", ""))
-			if err != nil {
-				return err
-			}
-			if err := v.collectControls(part.Children, values, depth+1, dst); err != nil {
-				return err
-			}
-		case "repeat":
-			key := n.Attr("source", "")
-			if values[key] == "" {
-				continue
-			}
-			alias := n.Attr("as", "item")
-			items := strings.Split(values[key], ",")
-			limit := min(len(items), boundedInt(n.Attr("limit", "30"), 30, 0, 100))
-			for i := 0; i < limit; i++ {
-				local := make(map[string]string, len(values)+1)
-				for k, val := range values {
-					local[k] = val
-				}
-				local[alias] = strings.TrimSpace(items[i])
-				if err := v.collectControls(n.Children, local, depth+1, dst); err != nil {
-					return err
-				}
-			}
-		default:
-			if err := v.collectControls(n.Children, values, depth+1, dst); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// RenderInteractive is a side-effect-free render plus a geometry index. Labels
-// are matched against the final rendered lines (including nested grid/panel).
-// Only controls still visible after truncation get a hotspot.
+// RenderInteractive preserves the legacy signature while delegating all layout
+// and hit testing to the structural cell renderer. No label matching is used.
 func (v View) RenderInteractive(values map[string]string, width int) ([]string, []Hotspot, bool) {
-	values = v.ResolveBindings(values)
-	lines := v.RenderWidth(values, width)
-	controls := []Node{}
-	if err := v.collectControls(v.Nodes, values, 0, &controls); err != nil {
+	frame, err := v.RenderFrame(values, width)
+	if err != nil {
 		return []string{"SML render error: " + safe(err.Error())}, nil, false
 	}
-	hotspots := []Hotspot{}
-	occupied := map[int]map[int]bool{}
-	for _, raw := range controls {
-		control := raw
-		text := renderActionControl(control, values, width)
-		if control.Kind == "toggle" || control.Kind == "choice" {
-			text = renderSessionControl(control, values, width)
-		}
-		if control.Kind == "input" || control.Kind == "number" {
-			text = renderSessionInput(control, values, width)
-		}
-		for row, line := range lines {
-			searchFrom := 0
-			for searchFrom < len(line) {
-				offset := strings.Index(line[searchFrom:], text)
-				if offset < 0 {
-					break
-				}
-				offset += searchFrom
-				begin := utf8.RuneCountInString(line[:offset])
-				end := begin + utf8.RuneCountInString(text)
-				taken := false
-				for col := begin; col < end; col++ {
-					if occupied[row][col] {
-						taken = true
-						break
-					}
-				}
-				if !taken {
-					if occupied[row] == nil {
-						occupied[row] = map[int]bool{}
-					}
-					for col := begin; col < end; col++ {
-						occupied[row][col] = true
-					}
-					hotspots = append(hotspots, Hotspot{Line: row, Start: begin, End: end, Label: control.Attr("label", ""), Page: control.Attr("page", ""), Command: control.Attr("command", ""), Kind: control.Kind, Key: control.Attr("key", ""), Options: controlOptions(control), PluginID: control.Attr("plugin", ""), PluginAction: control.Attr("action", ""), Arg: control.Attr("arg", ""), Source: control.Attr("source", ""), Bindings: control.Attr("bindings", ""), Min: boundedInt(control.Attr("min", "0"), 0, 0, 1000000), Max: boundedInt(control.Attr("max", "100"), 100, 0, 1000000)})
-				}
-				searchFrom = offset + len(text)
-			}
-		}
-	}
-	return lines, hotspots, v.HasAnimation()
+	return frame.Lines, frame.Hotspots, v.HasAnimation()
 }
 
 func (v View) HasAnimation() bool {
@@ -378,7 +269,7 @@ func (v View) HasAnimation() bool {
 			if node.Kind == "gif" {
 				return true
 			}
-			if node.Kind == "include" {
+			if node.Kind == "include" || node.Kind == "use" {
 				if part, err := v.component(node.Attr("name", "")); err == nil && visit(part.Children, depth+1) {
 					return true
 				}

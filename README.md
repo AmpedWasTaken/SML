@@ -50,12 +50,12 @@ The embedding Go application supplies the `app.*` bindings. Change the data and 
 | | |
 | --- | --- |
 | **Declarative UI** | Write screens using `<row>`, `<grid>`, `<panel>`, `<metric>`, and other readable components. |
-| **Go-first integration** | Parse once, pass a simple `map[string]string`, render as terminal-ready lines. |
+| **Go-first integration** | Parse markup, supply bindings, and render terminal lines or structured Unicode cell frames. |
 | **Reactive-style views** | Recompute bounded `<derive>` values and conditional branches when your host renders updated data. |
-| **Reusable components** | Organize screens under `views/`; share markup via `components/` and `<include>`. |
-| **Interactive metadata** | Get logical hitboxes for buttons, links, and local controls so your own app can handle keyboard/mouse events. |
+| **Reusable components** | Compose with `<include>` or `<use>` using declared props and named slots. |
+| **Interactive metadata** | Get cell-accurate hitboxes, stable control IDs and host-owned action descriptors. |
 | **Safer by design** | Reject unknown elements and executable directives; limit input size, nesting, repetition and media. |
-| **No third-party Go dependencies** | Core parser, renderer, and optional terminal gradient helpers use the standard library. |
+| **Small dependency footprint** | Uses `uniseg` for correct Unicode grapheme widths; the rest is Go standard library. |
 
 **How it fits into the Go TUI ecosystem:** SML is a *view layer*, not a replacement for a terminal event loop. You can use it inside an SSH dashboard, a custom terminal shell, or alongside another Go event/input system. Terminal sessions, redraw scheduling, navigation, state persistence, and permissions remain the responsibility of your host.
 
@@ -125,6 +125,7 @@ go run ./cmd/sml render \
 | Sections | `<panel title="Stats">`, `<section title="Overview">` |
 | Data | `<metric>`, `<field>`, `<table>`, `<progress>`, `<gauge>`, `<sparkline>` |
 | Logic | `<if>`, `<when>`, `<otherwise>`, `<empty>`, `<repeat>` |
+| Custom components | `<use>`, `<slot>`, `<fill>` with string props |
 | Computed values | `<derive key="derived.status" op="coalesce" .../>` |
 | Components | `<include name="header"/>` |
 | Inputs and actions | `<button>`, `<link>`, `<choice>`, `<toggle>`, `<input>`, `<number>` |
@@ -182,6 +183,7 @@ For commonly used commands, run `make check` (when Make is available). The CLI r
 | [Getting started / syntax](docs/language.md) | Screens, bindings, conditions, includes, and versions |
 | [Component reference](docs/components.md) | Built-in elements by category with examples |
 | [Go integration](docs/go-api.md) | Parsing, rendering, interaction metadata, and errors |
+| [Cell layout](docs/layout.md) | Unicode widths, frames, bounds and stable control IDs |
 | [CLI](docs/cli.md) | Commands, arguments and asset loading |
 | [Architecture](docs/architecture.md) | Parser, validator, renderer, host integration, limitations |
 | [Security](docs/security.md) | Resource limits, action trust boundaries and safe embedding |
