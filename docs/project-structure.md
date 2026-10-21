@@ -1,46 +1,64 @@
 # Project structure
 
+SML uses a small root package for external consumers and private packages for its implementation. In Go, **each directory is a separate package**, so moving types without a facade would break imports and exported method sets.
+
 ```text
 SML/
-├── .github/
-│   ├── ISSUE_TEMPLATE/      # Structured, reproducible reports and requests
-│   └── workflows/           # Go compatibility tests and checks
-├── cmd/sml/                 # Standalone validate/render CLI
-├── docs/                    # Language, APIs, architecture, roadmap, releases
-├── examples/                # Markup assets and runnable Go demonstrations
+├── sml.go                    # Single public API facade (import github.com/AmpedWasTaken/SML)
+├── api_test.go               # External-package compatibility tests
 ├── internal/
-│   └── textcell/            # Private grapheme width, clipping and wrapping
-├── terminal/                # Public, optional terminal gradient helpers
-├── *.go                     # Public sml package and tightly coupled engine
-├── go.mod / go.sum           # Module and dependency pin
-├── Makefile                 # Contributor checks
-└── README.md                # Entry point
+│   ├── engine/               # Core implementation + package-private regression tests
+│   │   ├── parse.go          # XML grammar and validation
+│   │   ├── types.go          # Internal view and node types
+│   │   ├── render_legacy.go  # v1-v3 compatible rendering
+│   │   ├── layout.go         # Cell-based layout and hitboxes
+│   │   ├── components.go     # Custom components, props, slots
+│   │   ├── interaction.go    # Declarative controls and action metadata
+│   │   ├── assets.go         # Loading local view trees
+│   │   ├── media.go          # Images/GIFs
+│   │   ├── style.go          # Styling
+│   │   └── *_test.go         # Co-located engine regression and fuzz tests
+│   └── textcell/             # Pure Unicode grapheme width, wrapping and clipping
+├── terminal/                 # Optional public gradient helpers
+├── cmd/sml/                  # CLI: validate and render
+├── examples/                 # Markup + executable Go host demonstrations
+├── docs/                     # Public docs, architecture, roadmap
+└── .github/                  # CI, issue templates, and dependency updates
 ```
 
-## Why not move every root Go file into its own folder?
+## Public API stays stable
 
-In Go, a directory is a package. The public import `github.com/AmpedWasTaken/SML` exposes types such as `Node`, `View`, `Frame`, `Cell`, and `Hotspot`. Moving those declarations into independent folders would create new import paths, circular dependencies, or compatibility-breaking API changes.
+Existing users still import:
 
-Root source files remain grouped by responsibility (`layout.go`, `interaction.go`, `components.go`, `media.go`, `style.go`, etc.) while reusable implementation without root dependencies belongs in `internal/`. Small public delegating wrappers, such as `cells.go`, preserve older imports. This is intentional Go package design, not an unfinished folder migration.
+```go
+import sml "github.com/AmpedWasTaken/SML"
 
-## Responsibilities
+view, err := sml.Parse([]byte(`<screen name="hello"><text>Hello</text></screen>`))
+if err != nil {
+    panic(err)
+}
+_ = view.RenderWidth(nil, 80)
+```
 
-| Location | What goes here | Public import |
-| --- | --- | --- |
-| Root `sml` | Parsing, validation, view tree, render APIs, interaction descriptors | Yes |
-| `internal/textcell` | Unicode text measurement and layout primitives | No |
-| `terminal` | Optional RGB/gradient helper utilities | Yes |
-| `cmd/sml` | CLI binary only | Command |
-| `examples` | Minimal host integration and portable markup | For learning |
-| `docs` | Reference, guidance, contribution decisions | N/A |
+The root `sml.go` exposes `Node`, `View`, `Frame`, `Cell`, `Rect`, `Element`, and `Hotspot` as *type aliases*, with small delegates for public package functions. An alias preserves its original method set, fields, and type identity, rather than creating a second representation. That means `View.RenderFrame`, `View.RenderInteractive`, `View.GradientStyles` and other existing methods remain available. The CLI and examples use the same public module path.
 
-## Extension rules
+The `internal/` packages cannot be imported by applications outside this module tree. Keep implementation details there rather than promising an unstable internal API.
 
-- Keep SML a *view engine*. Do not bind its core to an event loop, renderer backend, auth system, shell, or Sentinel-specific provider.
-- Add new grammar and semantics to the root validation/rendering pipeline with tests.
-- Keep pure reusable helpers in `internal/` if doing so avoids cycles. Move public declarations only when a release explicitly documents an API break.
-- Maintain `RenderChecked`, `RenderFrame`, and `RenderInteractive` compatibility for current callers.
-- Prefer `action="host.action"` metadata over legacy `command`. The host must authorize and dispatch actions.
-- Add new examples in their own folders and keep imports reproducible with `go run ./examples/<name>`.
+## Where should new code go?
 
-See [architecture](architecture.md), [security](security.md), and [releases](releasing.md).
+| Location | Purpose |
+| --- | --- |
+| `sml.go` | Public aliases/functions only; keep it small |
+| `api_test.go` | External consumer compatibility and import-path tests |
+| `internal/engine` | Parsing, rendering, component system, action descriptors, layout and regression tests |
+| `internal/textcell` | Independent grapheme-aware terminal string algorithms |
+| `terminal` | Optional, independently usable public presentation helpers |
+| `cmd` | Executable tools |
+| `examples` | Runnable host integrations |
+| `docs` | Language semantics, architecture, guides and contribution policies |
+
+## Additional package boundaries
+
+Do **not** create a new directory just to hide files: every new Go package adds an import boundary. Further splitting the tightly coupled engine (e.g. parser/AST or media/render interfaces) should happen when it measurably reduces dependencies without creating cycles or leaking internal types. Keep compatibility tests and the public facade in sync whenever a split happens.
+
+SML is a declarative view engine: the embedding host must still authorize and dispatch actions. See [architecture](architecture.md), [security](security.md) and [release process](releasing.md).
