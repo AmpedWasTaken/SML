@@ -53,10 +53,9 @@ func TestRejectsInvalidColumnCountDuringRender(t *testing.T) {
 }
 
 func TestEscapesTerminalControlsInText(t *testing.T) {
-	root, err := Parse([]byte("<sml><text>trusted\x1b[31m message</text></sml>"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	// XML explicitly rejects the ESC character; verify rendering also
+	// scrubs control bytes in an application-constructed tree.
+	root := &Node{Tag: "sml", Children: []*Node{{Tag: "text", Text: "trusted\x1b[31m message"}}}
 	result, err := RenderString(root, Options{Width: 30})
 	if err != nil {
 		t.Fatal(err)
