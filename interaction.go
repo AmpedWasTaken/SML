@@ -409,55 +409,10 @@ func (v View) collectControls(nodes []Node, values map[string]string, depth int,
 // RenderInteractive is a side-effect-free render plus a geometry index. Labels
 // are matched against the final rendered lines (including nested grid/panel).
 // Only controls still visible after truncation get a hotspot.
-func (v View) RenderInteractive(values map[string]string, width int) ([]string, []Hotspot, bool) {
-	values = v.ResolveBindings(values)
-	lines := v.RenderWidth(values, width)
-	controls := []Node{}
-	if err := v.collectControls(v.Nodes, values, 0, &controls); err != nil {
-		return []string{"SML render error: " + safe(err.Error())}, nil, false
-	}
-	hotspots := []Hotspot{}
-	occupied := map[int]map[int]bool{}
-	for _, raw := range controls {
-		control := raw
-		text := renderActionControl(control, values, width)
-		if control.Kind == "toggle" || control.Kind == "choice" {
-			text = renderSessionControl(control, values, width)
-		}
-		if control.Kind == "input" || control.Kind == "number" {
-			text = renderSessionInput(control, values, width)
-		}
-		for row, line := range lines {
-			searchFrom := 0
-			for searchFrom < len(line) {
-				offset := strings.Index(line[searchFrom:], text)
-				if offset < 0 {
-					break
-				}
-				offset += searchFrom
-				begin := utf8.RuneCountInString(line[:offset])
-				end := begin + utf8.RuneCountInString(text)
-				taken := false
-				for col := begin; col < end; col++ {
-					if occupied[row][col] {
-						taken = true
-						break
-					}
-				}
-				if !taken {
-					if occupied[row] == nil {
-						occupied[row] = map[int]bool{}
-					}
-					for col := begin; col < end; col++ {
-						occupied[row][col] = true
-					}
-					hotspots = append(hotspots, Hotspot{Line: row, Start: begin, End: end, Label: control.Attr("label", ""), Page: control.Attr("page", ""), Command: control.Attr("command", ""), Kind: control.Kind, Key: control.Attr("key", ""), Options: controlOptions(control), PluginID: control.Attr("plugin", ""), PluginAction: control.Attr("action", ""), Action:control.Attr("action",""), ID:control.Attr("id",""), Arg: control.Attr("arg", ""), Source: control.Attr("source", ""), Bindings: control.Attr("bindings", ""), Min: boundedInt(control.Attr("min", "0"), 0, 0, 1000000), Max: boundedInt(control.Attr("max", "100"), 100, 0, 1000000)})
-				}
-				searchFrom = offset + len(text)
-			}
-		}
-	}
-	return lines, hotspots, v.HasAnimation()
+func (v View) RenderInteractive(values map[string]string,width int)([]string,[]Hotspot,bool){
+    frame,err:=v.RenderFrame(values,width)
+    if err!=nil{return []string{"SML render error: "+safe(err.Error())},nil,false}
+    return frame.Lines,frame.Hotspots,v.HasAnimation()
 }
 
 func (v View) HasAnimation() bool {
