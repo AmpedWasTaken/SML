@@ -194,18 +194,10 @@ func trim(s string, max int) string {
 	if max <= 0 {
 		return ""
 	}
-	r := []rune(s)
-	if len(r) > max {
-		return string(r[:max])
-	}
-	return s
+	return ClipCells(s, max)
 }
 func pad(s string, w int) string {
-	n := utf8.RuneCountInString(s)
-	if n >= w {
-		return trim(s, w)
-	}
-	return s + strings.Repeat(" ", w-n)
+	return PadCells(s, w)
 }
 func (v View) component(name string) (Node, error) {
 	if !validName.MatchString(name) {
@@ -455,7 +447,7 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		for _, line := range strings.Split(strings.TrimRight(safe(string(b)), "\r\n"), "\n") {
 			line = trim(line, width)
 			raw = append(raw, line)
-			if w := utf8.RuneCountInString(line); w > maxW {
+			if w := CellWidth(line); w > maxW {
 				maxW = w
 			}
 		}

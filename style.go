@@ -123,7 +123,7 @@ func styleCase(s, kind string) string {
 }
 func styleAlign(s, align string, width int) string {
 	s = trim(s, width)
-	slack := width - utf8.RuneCountInString(s)
+	slack := width - CellWidth(s)
 	if slack <= 0 {
 		return s
 	}
@@ -242,10 +242,10 @@ func stylePanel(n Node, content []string, title string, width int) []string {
 	if title != "" {
 		header = " " + trim(styleCase(title, n.Attr("case", "none")), max(0, width-6)) + " "
 	}
-	if utf8.RuneCountInString(header) > width-2 {
+	if CellWidth(header) > width-2 {
 		header = trim(header, width-2)
 	}
-	horizontal := header + strings.Repeat(border.h, max(0, width-2-utf8.RuneCountInString(header)))
+	horizontal := header + strings.Repeat(border.h, max(0, width-2-CellWidth(header)))
 	out := []string{border.tl + horizontal + border.tr}
 	blank := border.v + strings.Repeat(" ", width-2) + border.v
 	for i := 0; i < padding-1; i++ {
