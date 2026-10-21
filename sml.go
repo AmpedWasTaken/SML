@@ -336,9 +336,14 @@ func (v View) node(n Node,values map[string]string,width,depth int)([]string,err
  return nil,fmt.Errorf("unsupported SML element <%s>",n.Kind)
 }
 func (v View) Render(values map[string]string)[]string{return v.RenderWidth(values,80)}
+
+// RenderChecked returns rendered lines and any render-time error.
+// Unlike RenderWidth it does not convert errors to visible error text.
+func (v View) RenderChecked(values map[string]string,width int)([]string,error){
+ return v.lines(v.Nodes,v.ResolveBindings(values),width,0)
+}
 func (v View) RenderWidth(values map[string]string,width int)[]string{
- values=v.ResolveBindings(values)
- out,err:=v.lines(v.Nodes,values,width,0)
+ out,err:=v.RenderChecked(values,width)
  if err!=nil {return []string{"SML render error: "+safe(err.Error())}}
  return out
 }

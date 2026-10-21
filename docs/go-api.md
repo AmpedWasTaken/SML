@@ -41,6 +41,6 @@ Call `view.GradientStyles()` for an `appearance` view. The returned values are `
 
 ## Error handling
 
-Invalid parse input returns an error. `LoadDir` returns errors for invalid views or includes. The current `RenderWidth` method reports late render failures as an `SML render error:` line, for compatibility with the original engine. Validate assets first and avoid treating error text as application success.
+Invalid parse input returns an error. `LoadDir` returns errors for invalid views or includes. Use `view.RenderChecked(values, width)` when your host needs errors as Go `error` values. For compatibility, `RenderWidth` reports late render failures as a visible `SML render error:` line. The CLI uses `RenderChecked` and exits nonzero on render errors.
 
 For production use, maintain an immutable last-known-good view snapshot and swap only when `LoadDir` succeeds.

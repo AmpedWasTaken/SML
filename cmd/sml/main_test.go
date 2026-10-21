@@ -21,3 +21,10 @@ func TestCLIRejectsInvalidMarkup(t *testing.T) {
     if err := os.WriteFile(file, []byte(`<screen name="bad"><execute/></screen>`), 0600); err != nil { t.Fatal(err) }
     if got := run([]string{"validate",file}); got == 0 { t.Fatal("accepted unsupported element") }
 }
+
+func TestCLIRenderFailureIsNonzero(t *testing.T) {
+    dir := t.TempDir()
+    file := filepath.Join(dir, "missing.sml")
+    if err := os.WriteFile(file, []byte(`<screen name="missing"><include name="unavailable"/></screen>`), 0600); err != nil { t.Fatal(err) }
+    if got := run([]string{"render",file}); got == 0 { t.Fatal("render error reported as success") }
+}

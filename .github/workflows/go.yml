@@ -21,3 +21,6 @@ jobs:
           cache: false
       - run: go test ./...
       - run: go vet ./...
+      - run: go run ./cmd/sml validate examples/dashboard.sml
+      - run: go run ./cmd/sml validate examples/assets
+      - run: go run ./cmd/sml render -set service.health=online examples/dashboard.sml

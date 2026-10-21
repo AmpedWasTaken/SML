@@ -91,8 +91,8 @@ func run(args []string) int {
         }
         values[key] = value
     }
-    for _, line := range view.RenderWidth(values, *width) {
-        fmt.Println(line)
-    }
+    lines, err := view.RenderChecked(values, *width)
+    if err != nil { fmt.Fprintln(os.Stderr, "sml:", err); return 1 }
+    for _, line := range lines { fmt.Println(line) }
     return 0
 }
