@@ -35,12 +35,6 @@ var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
 var uiLabel = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _./:+-]{0,46}$`)
 var actionID = regexp.MustCompile("^[a-z][a-z0-9_.-]{0,63}$")
-var safeCommands = map[string]bool{
-	"help": true, "status": true, "whoami": true, "jobs": true,
-	"lab": true, "lab methods": true, "lab ongoing": true, "lab history": true,
-	"api list": true, "plugins list": true, "sessions": true, "version": true,
-}
-
 // button is a read-only command or page navigation. A future extension API
 // may register additional typed safe actions without giving SML a shell.
 func validateControl(n Node) error {
@@ -107,7 +101,7 @@ func validateControl(n Node) error {
 	if page != "" && !validName.MatchString(page) {
 		return errors.New("invalid page destination")
 	}
-	if command != "" && !safeCommands[command] {
+	if command != "" && !legacyReadOnlyCommands[command] {
 		return fmt.Errorf("command %q is not in the read-only SML action allowlist", command)
 	}
 	return nil
