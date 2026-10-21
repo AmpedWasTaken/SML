@@ -20,6 +20,9 @@ The public API is currently pre-1.0. Follow [Semantic Versioning](https://semver
 
 ### Changed
 
+- Relocated core engine source and all package-private regression tests to `internal/engine/`, keeping the repository root focused on a single public `sml.go` facade.
+- Re-exported existing public types and functions through Go aliases/wrappers without introducing new imports for consumers; added external-package API compatibility regression coverage.
+
 - Kept the public cell helpers as backward-compatible wrappers while moving implementation into `internal/textcell`.
 - Isolated Sentinel-origin legacy command names without altering the existing parser behavior.
 

@@ -29,7 +29,7 @@ SML has a deliberately small scope: **markup → validated view tree → rendere
 
 ## Rendering
 
-RenderWidth and RenderChecked interpolate string bindings, evaluate bounded `derived.*` values, select conditional branches, and produce terminal text-cell rows with width-aware layout. DataTable JSON is supplied by the embedding app, not fetched by the language. `RenderChecked` provides error propagation to the host.
+The root facade delegates to the private engine; the implementation is isolated behind Go type aliases, preserving public method sets and data types. RenderWidth and RenderChecked interpolate string bindings, evaluate bounded `derived.*` values, select conditional branches, and produce terminal text-cell rows with width-aware layout. DataTable JSON is supplied by the embedding app, not fetched by the language. `RenderChecked` provides error propagation to the host.
 
 ## Interactivity
 
@@ -37,9 +37,10 @@ RenderWidth and RenderChecked interpolate string bindings, evaluate bounded `der
 
 ## Module layout
 
-- Root package `sml`: parser, validation, presentation, controls, media and view loading.
-- `internal/textcell/`: private Unicode grapheme width, clipping, padding and wrapping primitives. Public compatibility functions stay in root `cells.go`.
-- `legacy_commands.go`: isolated compatibility allowlist for older host commands. New applications should use `action` metadata.
+- Root package `sml` (`sml.go`): thin compatibility facade with public type aliases and function delegation.
+- `internal/engine/`: parser, validation, layout, rendering, reusable components, legacy controls, media, assets and their regression tests.
+- `internal/textcell/`: private Unicode grapheme width, clipping, padding and wrapping primitives. Public compatibility helpers are forwarded through `sml.go`.
+- `internal/engine/legacy_commands.go`: isolated compatibility allowlist for older host commands. New applications should use `action` metadata.
 - `terminal/`: optional, independently importable RGB/gradient presentation helpers.
 - `cmd/sml/`: CLI for validation and text rendering.
 - `examples/`: sample views and a reusable component tree.

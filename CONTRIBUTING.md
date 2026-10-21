@@ -27,7 +27,7 @@ Without `make`, use `gofmt -l` to check formatting, `go test ./...`, `go vet ./.
 
 ## Code organization
 
-See [project structure](docs/project-structure.md). Keep exported Go types/functions in the root `sml` package unless a separate package is justified. Put internal helpers with no public API in `internal/`, optional reusable public terminal helpers in `terminal/`, examples in `examples/`, and executable tools in `cmd/`.
+See [project structure](docs/project-structure.md). Maintain exported Go APIs in the root `sml.go` facade (aliases and wrappers). Put the parser, renderer, components, controls, assets and their package-private tests under `internal/engine/`. Pure terminal grapheme helpers remain in `internal/textcell/`. Optional public gradient helpers belong in `terminal/`, examples in `examples/`, and executable tools in `cmd/`. Update root facade tests when changing public behavior.
 
 Keep changes focused. Do not create a folder per root file: in Go, package boundaries are directories, and moving a public declaration to a new package changes import compatibility.
 

@@ -59,6 +59,10 @@ The embedding Go application supplies the `app.*` bindings. Change the data and 
 
 **How it fits into the Go TUI ecosystem:** SML is a *view layer*, not a replacement for a terminal event loop. You can use it inside an SSH dashboard, a custom terminal shell, or alongside another Go event/input system. Terminal sessions, redraw scheduling, navigation, state persistence, and permissions remain the responsibility of your host.
 
+## Repository layout
+
+The root intentionally contains only `sml.go`, a thin public API facade, and a public API compatibility test. Implementation and its regression tests live in [`internal/engine/`](internal/engine/); grapheme helpers live in [`internal/textcell/`](internal/textcell/). This keeps the repository tidy **without changing existing Go imports**. See [project structure](docs/project-structure.md).
+
 ## Quick start
 
 Requires **Go 1.23+**.
