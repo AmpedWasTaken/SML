@@ -60,7 +60,7 @@ func validateStyleSystem(nodes []Node) error {
  var walk func([]Node) error
  walk=func(parts []Node)error {
   for _,node:=range parts {
-   if _,styleTag:=node.Attrs["style"];styleTag{
+   if _,styleTag:=node.Attrs["style"];styleTag && node.Kind!="table"{
     return fmt.Errorf("SML <%s> uses unsupported style=; set attributes directly",node.Kind)
    }
    if allowed,ok:=inlineProps[node.Kind];ok {
