@@ -1,51 +1,75 @@
+<div align="center">
+
 # SML
 
-**Declarative terminal interfaces in Go.** SML is a small XML-like markup language and rendering library extracted from the SML engine in Sentinel V5.
+### Beautiful terminal UIs, written in markup.
+
+**A declarative, lightweight TUI view engine for Go.**  
+Compose terminal screens with familiar XML-like elements, supply live data from Go, and keep presentation separate from your application logic.
+
+[Get started](#quick-start) · [Language guide](docs/language.md) · [Go API](docs/go-api.md) · [Components](docs/components.md) · [Examples](examples/) · [Contributing](CONTRIBUTING.md)
 
 [![Go CI](https://github.com/AmpedWasTaken/SML/actions/workflows/go.yml/badge.svg)](https://github.com/AmpedWasTaken/SML/actions/workflows/go.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/AmpedWasTaken/SML.svg)](https://pkg.go.dev/github.com/AmpedWasTaken/SML)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Go 1.23+](https://img.shields.io/badge/Go-1.23%2B-00ADD8?logo=go&logoColor=white)](go.mod)
 
-Define layouts in editable `.sml` files, bind host-provided data, compose reusable components, and render terminal-friendly text. The library is intentionally separate from databases, networking, authentication, and any particular terminal server.
+</div>
 
-> **Status: pre-release extraction.** The first standalone version is under review. There is no tagged stable release yet. This is a markup parser and renderer, **not** an independent full-screen input/event loop.
+---
 
-## A first view
+SML lets you define *what* your terminal UI looks like, without hardcoding layouts into hundreds of Go print statements. Its markup is declarative, bounded, and deliberately **non-executable**.
 
-```xml
+**What it looks like:**
+
+\`\`\`xml
 <screen name="dashboard" version="3">
-  <derive key="derived.health" op="coalesce"
-          source="service.health" fallback="unknown"/>
-  <section title="Overview">
-    <field label="Health" key="derived.health"/>
-    <grid columns="2" collapse-below="60">
-      <metric label="Requests" value="{{stats.requests}}"/>
-      <metric label="Users" value="{{stats.users}}"/>
+  <derive key="derived.health"
+          op="coalesce"
+          source="app.health"
+          fallback="unknown"/>
+
+  <section title="DASHBOARD">
+    <grid columns="2" gap="2" collapse-below="60">
+      <metric label="Requests" value="{{app.requests}}"/>
+      <metric label="Errors" value="{{app.errors}}"/>
     </grid>
-    <progress label="Capacity" value="{{stats.capacity}}"/>
+
+    <panel title="Service">
+      <field label="Status" key="derived.health"/>
+      <progress label="CPU" value="{{app.cpu}}"/>
+    </panel>
   </section>
 </screen>
-```
+\`\`\`
+
+The embedding Go application supplies the \`app.*\` bindings. Change the data and re-render the view; no embedded scripting or runtime JavaScript is involved.
+
+## Why SML?
+
+| | |
+| --- | --- |
+| **Declarative UI** | Write screens using \`<row>\`, \`<grid>\`, \`<panel>\`, \`<metric>\`, and other readable components. |
+| **Go-first integration** | Parse once, pass a simple \`map[string]string\`, render as terminal-ready lines. |
+| **Reactive-style views** | Recompute bounded \`<derive>\` values and conditional branches when your host renders updated data. |
+| **Reusable components** | Organize screens under \`views/\`; share markup via \`components/\` and \`<include>\`. |
+| **Interactive metadata** | Get logical hitboxes for buttons, links, and local controls so your own app can handle keyboard/mouse events. |
+| **Safer by design** | Reject unknown elements and executable directives; limit input size, nesting, repetition and media. |
+| **No third-party Go dependencies** | Core parser, renderer, and optional terminal gradient helpers use the standard library. |
+
+**How it fits into the Go TUI ecosystem:** SML is a *view layer*, not a replacement for a terminal event loop. You can use it inside an SSH dashboard, a custom terminal shell, or alongside another Go event/input system. Terminal sessions, redraw scheduling, navigation, state persistence, and permissions remain the responsibility of your host.
 
 ## Quick start
 
-Requires Go 1.23+.
+Requires **Go 1.23+**.
 
-```sh
+\`\`\`bash
 go get github.com/AmpedWasTaken/SML
-go run github.com/AmpedWasTaken/SML/cmd/sml validate examples/dashboard.sml
-```
+\`\`\`
 
-The `go run` command above assumes you are inside this repository with access to its `examples/` folder; in another project, validate your own file path.
+Use SML directly:
 
-Or from a clone:
-
-```sh
-go run ./cmd/sml validate examples/dashboard.sml
-go run ./cmd/sml render -width 70 -set service.health=online -set stats.requests=42 -set stats.users=9 -set stats.capacity=34 examples/dashboard.sml
-```
-
-Embed it in a Go application:
-
-```go
+\`\`\`go
 package main
 
 import (
@@ -56,42 +80,126 @@ import (
 )
 
 func main() {
-    v, err := sml.Parse([]byte(`<screen name="demo"><text>Hello {{user.name}}</text></screen>`))
-    if err != nil { panic(err) }
-    fmt.Println(strings.Join(v.RenderWidth(map[string]string{"user.name": "developer"}, 80), "\n"))
+    view, err := sml.Parse([]byte(\`
+        <screen name="hello">
+            <panel title="Hello, SML!">
+                <text>Welcome, {{user.name}}</text>
+            </panel>
+        </screen>
+    \`))
+    if err != nil {
+        panic(err)
+    }
+
+    lines, err := view.RenderChecked(
+        map[string]string{"user.name": "developer"}, 60,
+    )
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(strings.Join(lines, "\n"))
 }
-```
+\`\`\`
 
-## What is included
+Or run the included CLI from a clone:
 
-- **Markup:** `screen`, `text`, `row`, `column`, `grid`, `panel`, `section`, `metric`, `badge`, `progress`, `table`, `if`, `when`, `repeat`, and more.
-- **SML v3:** bounded `derive` computations, conditional fallbacks, style attributes, and state-gated controls.
-- **Presentation:** ASCII/Unicode tables, gauges, sparklines, text-based image/GIF rendering, and gradient profiles.
-- **Interaction metadata:** `RenderInteractive` returns view lines and hit-test metadata; the embedding application owns keyboard/mouse routing, permissions, and action execution.
-- **Assets:** `LoadDir` reads `views/*.sml`, and `include` resolves `components/*.sml` with bounded validation.
-- **Developer tools:** `sml validate` and `sml render`, sample views, regression tests, and CI.
+\`\`\`bash
+go run ./cmd/sml validate examples/dashboard.sml
+
+go run ./cmd/sml render \
+  -width 70 \
+  -set app.health=online \
+  -set app.requests=4242 \
+  -set app.errors=3 \
+  -set app.cpu=37 \
+  examples/quickstart.sml
+\`\`\`
+
+> The CLI prints rendered lines. It does **not** start a mouse-driven, full-screen interactive application. The host is responsible for events and redrawing.
+
+## Explore the language
+
+| Feature | Example |
+| --- | --- |
+| Layout | \`<row>\`, \`<column>\`, \`<grid columns="3">\` |
+| Sections | \`<panel title="Stats">\`, \`<section title="Overview">\` |
+| Data | \`<metric>\`, \`<field>\`, \`<table>\`, \`<progress>\`, \`<gauge>\`, \`<sparkline>\` |
+| Logic | \`<if>\`, \`<when>\`, \`<otherwise>\`, \`<empty>\`, \`<repeat>\` |
+| Computed values | \`<derive key="derived.status" op="coalesce" .../>\` |
+| Components | \`<include name="header"/>\` |
+| Inputs and actions | \`<button>\`, \`<link>\`, \`<choice>\`, \`<toggle>\`, \`<input>\`, \`<number>\` |
+| Visuals | Inline styling attributes, gradients, text-cell images and GIFs |
+
+SML views are **strictly validated**, not HTML documents; browser APIs, CSS stylesheets, arbitrary JS, shell invocations and remote image URLs are not supported.
+
+### Your first real project
+
+\`\`\`text
+my-app/
+├── main.go
+└── assets/
+    ├── views/
+    │   ├── home.sml
+    │   └── status.sml
+    ├── components/
+    │   └── header.sml
+    ├── art/                    # optional ASCII art
+    └── media/                  # optional local images/GIFs
+\`\`\`
+
+\`\`\`go
+views, err := sml.LoadDir("assets")
+if err != nil {
+    return err // keep last-known-good assets when hot reloading
+}
+
+lines, err := views["home"].RenderChecked(data, 80)
+if err != nil {
+    return err
+}
+
+// Your application decides how and when to paint these lines.
+\`\`\`
+
+See [the Go API guide](docs/go-api.md), [complete component reference](docs/components.md) and [example assets](examples/assets/).
+
+## CLI and development
+
+\`\`\`bash
+go run ./cmd/sml validate examples/dashboard.sml
+go run ./cmd/sml validate examples/assets
+go run ./cmd/sml render -width 80 -set user.name=Tim -assets examples/assets examples/assets/views/status.sml
+go test ./...
+go vet ./...
+\`\`\`
+
+For commonly used commands, run \`make check\` (when Make is available). The CLI reference explains \`validate\`, \`render\`, flags and error codes: [docs/cli.md](docs/cli.md).
 
 ## Documentation
 
-| Guide | Description |
+| Guide | Covers |
 | --- | --- |
-| [Language reference](docs/language.md) | Syntax, elements, expressions, files and versions |
-| [Go integration](docs/go-api.md) | Parsing, loading, rendering and interactive metadata |
-| [CLI](docs/cli.md) | Validation and rendering commands |
-| [Security model](docs/security.md) | Limits, trust boundaries, and host authorization |
-| [Sentinel migration](docs/migration.md) | Compatibility boundaries and integration checklist |
-| [Contributing](CONTRIBUTING.md) | Development workflow and pull requests |
+| [Getting started / syntax](docs/language.md) | Screens, bindings, conditions, includes, and versions |
+| [Component reference](docs/components.md) | Built-in elements by category with examples |
+| [Go integration](docs/go-api.md) | Parsing, rendering, interaction metadata, and errors |
+| [CLI](docs/cli.md) | Commands, arguments and asset loading |
+| [Architecture](docs/architecture.md) | Parser, validator, renderer, host integration, limitations |
+| [Security](docs/security.md) | Resource limits, action trust boundaries and safe embedding |
+| [Migrating from Sentinel V5](docs/migration.md) | Package imports and host responsibilities |
+| [Contributing](CONTRIBUTING.md) | Local tooling, tests and PRs |
 
-## Important boundaries
+## Status and compatibility
 
-SML markup **cannot execute arbitrary Go, shell commands, JavaScript, or network requests**. Action declarations only describe controls. Rendered output and control metadata are returned to the embedding host; the host must authorize and dispatch any requested action. The `enabled-when` property only controls presentation, not permissions.
+SML was originally developed as the terminal view engine for [Sentinel V5](https://github.com/AmpedWasTaken/Sentinel-V5) and has been extracted so anyone can embed the language in Go applications. The engine accepts SML v1/v2/v3 documents and preserves the existing markup syntax. **Compatibility is the goal, not a promise of a frozen v1.0 API**. Pin a version/commit for production integrations until the first stable release.
 
-Existing Sentinel V5 v1/v2/v3 SML documents are the compatibility target. Server bindings, session state persistence, plugins, terminal resize/mouse support, and live invalidation are **host responsibilities**, not automatically provided by this library.
+The project includes Go tests and GitHub CI. The published package does not contain Sentinel authentication, providers, plugin execution, or backend permission logic; it only describes terminal views and interactions.
 
-## Project history
+## Contributing
 
-The initial implementation originates from Sentinel V5's `internal/sml` package and its terminal gradient utilities. The reusable parser, renderer and engine tests are extracted here; Sentinel's server runtime, bundled administration views, and application-specific defaults are intentionally not included.
+Issues, examples, bug reports, and PRs are welcome. Please include a small reproducer for rendering bugs, test both narrow and wide terminals, and document any language-level changes.
 
-**License:** not selected yet. Until a license is added, standard copyright restrictions apply; check with the maintainer before redistributing.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [the changelog](CHANGELOG.md).
 
-**Maintainer:** [AmpedWasTaken](https://github.com/AmpedWasTaken)
+## License
+
+MIT © 2026 [AmpedWasTaken](https://github.com/AmpedWasTaken). See [LICENSE](LICENSE).

@@ -1,0 +1,50 @@
+# Architecture
+
+SML has a deliberately small scope: **markup → validated view tree → rendered terminal lines and interaction metadata**.
+
+\`\`\`text
+  .sml file  ───┐
+                ├─> Parse / LoadDir ──> View (validated)
+  components/ ──┘                             │
+                                            │ bindings
+                                   ┌────────▼─────────┐
+                                   │  ResolveBindings │
+                                   │  layout / render │
+                                   └────────┬─────────┘
+                                            │
+                                ┌───────────┴──────────┐
+                                ▼                      ▼
+                           []string lines         []Hotspot
+                                │                      │
+                                └──────────┬───────────┘
+                                           ▼
+                             Embedding Go TUI application
+                        (auth, state, resize, keyboard/mouse,
+                          redraw loop, action dispatch)
+\`\`\`
+
+## Parsing
+
+\`Parse([]byte)\` tokenizes and validates XML markup with \`encoding/xml\`. Unknown elements, XML namespaces, unsafe directives, excessive nesting, or unsupported control attributes fail before the view becomes usable. \`LoadDir(assets)\` reads named screens from \`assets/views/\` and verifies component includes.
+
+## Rendering
+
+RenderWidth and RenderChecked interpolate string bindings, evaluate bounded \`derived.*\` values, select conditional branches, and produce terminal text-cell rows with width-aware layout. DataTable JSON is supplied by the embedding app, not fetched by the language. \`RenderChecked\` provides error propagation to the host.
+
+## Interactivity
+
+\`RenderInteractive\` produces logical line and cell geometry for interactive controls. It does not listen for key presses, maintain an event loop, execute commands or manage an SSH connection. The host maps logical coordinates to viewport positions and *re-authorizes* actions using the current authenticated identity.
+
+## Module layout
+
+- Root package \`sml\`: parser, validation, presentation, controls, media and view loading.
+- \`terminal/\`: optional, independently importable RGB/gradient presentation helpers.
+- \`cmd/sml/\`: CLI for validation and text rendering.
+- \`examples/\`: sample views and a reusable component tree.
+- \`docs/\`: language spec, component catalog, public API, CLI and security boundaries.
+
+## Compatibility and extensions
+
+Views use the same .sml XML-like syntax as the original SML v1/v2/v3 engine. Richer UI controls, authorization, terminal-specific drawing, and runtime integration should be implemented in the host or via separately documented public APIs; silently adding executable tags would violate the language's trust model.
+
+Contributions that change markup must include parser validation tests, rendering tests, malformed-input tests, and documentation.

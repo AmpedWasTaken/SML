@@ -1,25 +1,47 @@
-# Contributing to SML
+# Contributing
 
-Thanks for helping make the standalone SML library useful beyond its original host.
+Thanks for helping build a reusable Go-first terminal markup language.
 
-## Local checks
+## Before opening a PR
 
-Use Go 1.23+.
+1. Read [the architecture](docs/architecture.md), [the language guide](docs/language.md), and [the security model](docs/security.md).
+2. Open an issue for major new syntax or public API changes so backward compatibility can be discussed.
+3. Prefer small, focused PRs with representative SML snippets and tests.
+4. Update examples and documentation when changing markup semantics.
 
-```sh
-go fmt ./...
+## Development
+
+Requires Go 1.23+.
+
+```bash
+git clone https://github.com/AmpedWasTaken/SML.git
+cd SML
+gofmt -w .
 go test ./...
 go vet ./...
-go run ./cmd/sml validate examples/dashboard.sml
 go run ./cmd/sml validate examples/assets
 ```
 
-Keep the public API small. Submit parsing and rendering changes with regression tests, including malformed-input cases where appropriate. Please do not add shell execution, unchecked dynamic evaluation, or unbounded network/filesystem access to markup features.
+Or use `make check` to run formatting checks, tests, vet and CLI examples.
 
-## Pull requests
+## Changes we value
 
-Explain the behavior change, provide a minimal `.sml` example, update the reference docs, and describe backwards-compatibility impact. Preserve v1/v2/v3 markup compatibility when possible. Avoid coupling the library to Sentinel's server, plugin manager, or authentication system.
+- Better terminal-width handling, with edge-case tests.
+- Clear error messages and diagnostics for malformed SML.
+- Performance improvements that preserve bounded resource use.
+- Interop examples with real Go TUI input/event systems.
+- Accessible, narrow-terminal layouts and complete docs.
 
-## Licensing
+SML markup is **not** an executable scripting language. Avoid shell execution, arbitrary eval, unrestricted file paths, user-controlled network access or permissions encoded in markup.
 
-No open-source license has been selected at this stage. Contributions and redistribution terms will need to be clarified before a stable open-source release.
+## PR checklist
+
+- [ ] Go is `gofmt`-formatted.
+- [ ] `go test ./...` and `go vet ./...` pass.
+- [ ] Invalid input and security-sensitive changes have tests.
+- [ ] New behavior is documented with an actual `.sml` example.
+- [ ] v1/v2/v3 compatibility impact is stated.
+
+## License
+
+By contributing, you agree to release your contributions under the [MIT License](LICENSE).

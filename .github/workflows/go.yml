@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   test:
+    name: Tests, vet, and examples
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,8 +20,20 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - run: go test ./...
-      - run: go vet ./...
-      - run: go run ./cmd/sml validate examples/dashboard.sml
-      - run: go run ./cmd/sml validate examples/assets
-      - run: go run ./cmd/sml render -set service.health=online examples/dashboard.sml
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l $(git ls-files '*.go'))"
+          if [ -n "$unformatted" ]; then
+            echo "$unformatted"
+            exit 1
+          fi
+      - name: Test
+        run: go test ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Validate example screen
+        run: go run ./cmd/sml validate examples/quickstart.sml
+      - name: Validate asset tree
+        run: go run ./cmd/sml validate examples/assets
+      - name: Render example
+        run: go run ./cmd/sml render -set app.health=online -set app.cpu=37 examples/quickstart.sml
