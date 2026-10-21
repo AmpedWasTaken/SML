@@ -22,7 +22,7 @@ SML lets you define *what* your terminal UI looks like, without hardcoding layou
 
 **What it looks like:**
 
-\`\`\`xml
+```xml
 <screen name="dashboard" version="3">
   <derive key="derived.health"
           op="coalesce"
@@ -41,18 +41,18 @@ SML lets you define *what* your terminal UI looks like, without hardcoding layou
     </panel>
   </section>
 </screen>
-\`\`\`
+```
 
-The embedding Go application supplies the \`app.*\` bindings. Change the data and re-render the view; no embedded scripting or runtime JavaScript is involved.
+The embedding Go application supplies the `app.*` bindings. Change the data and re-render the view; no embedded scripting or runtime JavaScript is involved.
 
 ## Why SML?
 
 | | |
 | --- | --- |
-| **Declarative UI** | Write screens using \`<row>\`, \`<grid>\`, \`<panel>\`, \`<metric>\`, and other readable components. |
-| **Go-first integration** | Parse once, pass a simple \`map[string]string\`, render as terminal-ready lines. |
-| **Reactive-style views** | Recompute bounded \`<derive>\` values and conditional branches when your host renders updated data. |
-| **Reusable components** | Organize screens under \`views/\`; share markup via \`components/\` and \`<include>\`. |
+| **Declarative UI** | Write screens using `<row>`, `<grid>`, `<panel>`, `<metric>`, and other readable components. |
+| **Go-first integration** | Parse once, pass a simple `map[string]string`, render as terminal-ready lines. |
+| **Reactive-style views** | Recompute bounded `<derive>` values and conditional branches when your host renders updated data. |
+| **Reusable components** | Organize screens under `views/`; share markup via `components/` and `<include>`. |
 | **Interactive metadata** | Get logical hitboxes for buttons, links, and local controls so your own app can handle keyboard/mouse events. |
 | **Safer by design** | Reject unknown elements and executable directives; limit input size, nesting, repetition and media. |
 | **No third-party Go dependencies** | Core parser, renderer, and optional terminal gradient helpers use the standard library. |
@@ -63,13 +63,13 @@ The embedding Go application supplies the \`app.*\` bindings. Change the data an
 
 Requires **Go 1.23+**.
 
-\`\`\`bash
+```bash
 go get github.com/AmpedWasTaken/SML
-\`\`\`
+```
 
 Use SML directly:
 
-\`\`\`go
+```go
 package main
 
 import (
@@ -80,13 +80,13 @@ import (
 )
 
 func main() {
-    view, err := sml.Parse([]byte(\`
+    view, err := sml.Parse([]byte(`
         <screen name="hello">
             <panel title="Hello, SML!">
                 <text>Welcome, {{user.name}}</text>
             </panel>
         </screen>
-    \`))
+    `))
     if err != nil {
         panic(err)
     }
@@ -99,11 +99,11 @@ func main() {
     }
     fmt.Println(strings.Join(lines, "\n"))
 }
-\`\`\`
+```
 
 Or run the included CLI from a clone:
 
-\`\`\`bash
+```bash
 go run ./cmd/sml validate examples/dashboard.sml
 
 go run ./cmd/sml render \
@@ -113,7 +113,7 @@ go run ./cmd/sml render \
   -set app.errors=3 \
   -set app.cpu=37 \
   examples/quickstart.sml
-\`\`\`
+```
 
 > The CLI prints rendered lines. It does **not** start a mouse-driven, full-screen interactive application. The host is responsible for events and redrawing.
 
@@ -121,20 +121,20 @@ go run ./cmd/sml render \
 
 | Feature | Example |
 | --- | --- |
-| Layout | \`<row>\`, \`<column>\`, \`<grid columns="3">\` |
-| Sections | \`<panel title="Stats">\`, \`<section title="Overview">\` |
-| Data | \`<metric>\`, \`<field>\`, \`<table>\`, \`<progress>\`, \`<gauge>\`, \`<sparkline>\` |
-| Logic | \`<if>\`, \`<when>\`, \`<otherwise>\`, \`<empty>\`, \`<repeat>\` |
-| Computed values | \`<derive key="derived.status" op="coalesce" .../>\` |
-| Components | \`<include name="header"/>\` |
-| Inputs and actions | \`<button>\`, \`<link>\`, \`<choice>\`, \`<toggle>\`, \`<input>\`, \`<number>\` |
+| Layout | `<row>`, `<column>`, `<grid columns="3">` |
+| Sections | `<panel title="Stats">`, `<section title="Overview">` |
+| Data | `<metric>`, `<field>`, `<table>`, `<progress>`, `<gauge>`, `<sparkline>` |
+| Logic | `<if>`, `<when>`, `<otherwise>`, `<empty>`, `<repeat>` |
+| Computed values | `<derive key="derived.status" op="coalesce" .../>` |
+| Components | `<include name="header"/>` |
+| Inputs and actions | `<button>`, `<link>`, `<choice>`, `<toggle>`, `<input>`, `<number>` |
 | Visuals | Inline styling attributes, gradients, text-cell images and GIFs |
 
 SML views are **strictly validated**, not HTML documents; browser APIs, CSS stylesheets, arbitrary JS, shell invocations and remote image URLs are not supported.
 
 ### Your first real project
 
-\`\`\`text
+```text
 my-app/
 ├── main.go
 └── assets/
@@ -145,9 +145,9 @@ my-app/
     │   └── header.sml
     ├── art/                    # optional ASCII art
     └── media/                  # optional local images/GIFs
-\`\`\`
+```
 
-\`\`\`go
+```go
 views, err := sml.LoadDir("assets")
 if err != nil {
     return err // keep last-known-good assets when hot reloading
@@ -159,21 +159,21 @@ if err != nil {
 }
 
 // Your application decides how and when to paint these lines.
-\`\`\`
+```
 
 See [the Go API guide](docs/go-api.md), [complete component reference](docs/components.md) and [example assets](examples/assets/).
 
 ## CLI and development
 
-\`\`\`bash
+```bash
 go run ./cmd/sml validate examples/dashboard.sml
 go run ./cmd/sml validate examples/assets
 go run ./cmd/sml render -width 80 -set user.name=Tim -assets examples/assets examples/assets/views/status.sml
 go test ./...
 go vet ./...
-\`\`\`
+```
 
-For commonly used commands, run \`make check\` (when Make is available). The CLI reference explains \`validate\`, \`render\`, flags and error codes: [docs/cli.md](docs/cli.md).
+For commonly used commands, run `make check` (when Make is available). The CLI reference explains `validate`, `render`, flags and error codes: [docs/cli.md](docs/cli.md).
 
 ## Documentation
 

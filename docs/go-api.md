@@ -11,6 +11,15 @@ for _, line := range lines { fmt.Println(line) }
 
 `Parse([]byte)` validates the syntax, supported elements, styles, and declared controls. `Render(values)` uses the default width 80; `RenderWidth(values, width)` renders terminal text lines. Rendering uses the host's string bindings and never executes markup.
 
+## Parse an on-disk SML view
+
+```go
+view, err := sml.ParseFile("views/home.sml")
+if err != nil { return err }
+```
+
+`ParseFile` rejects symlink/non-regular input and files larger than the language's 64 KiB limit, then calls the same parser as `Parse`. For views with includes, call `view.WithAssets("assets")`, or prefer `LoadDir("assets")` to validate the complete asset tree.
+
 ## Load reusable project assets
 
 ```go

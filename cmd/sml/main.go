@@ -74,12 +74,7 @@ func run(args []string) int {
 		fmt.Fprintln(os.Stderr, "sml: expected a .sml file")
 		return 2
 	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "sml:", err)
-		return 1
-	}
-	view, err := sml.Parse(data)
+	view, err := sml.ParseFile(path)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "sml:", err)
 		return 1
