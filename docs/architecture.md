@@ -48,3 +48,10 @@ RenderWidth and RenderChecked interpolate string bindings, evaluate bounded `der
 Views use the same .sml XML-like syntax as the original SML v1/v2/v3 engine. Richer UI controls, authorization, terminal-specific drawing, and runtime integration should be implemented in the host or via separately documented public APIs; silently adding executable tags would violate the language's trust model.
 
 Contributions that change markup must include parser validation tests, rendering tests, malformed-input tests, and documentation.
+
+
+## Structural rendering path
+
+The new opt-in `RenderFrame` recursively lays out elements and records control bounds before composing terminal rows. `RenderInteractive` now consumes this layout, replacing label-based reverse matching with stable IDs and cell-accurate hitboxes. Width and clipping use `uniseg` grapheme clusters. Legacy `RenderChecked` remains available for v1-v3 string output compatibility.
+
+See [cell-based rendering](layout.md).

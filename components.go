@@ -12,6 +12,7 @@ func validateComponentSyntax(nodes []Node) error {
 	var walk func([]Node, string) error
 	walk = func(parts []Node, parent string) error {
 		for _, n := range parts {
+            if id,ok:=n.Attrs["id"];ok && (!controlNode(n)||!actionID.MatchString(id)) {return errors.New("invalid SML control id")}
 			switch n.Kind {
 			case "component":
 				if !validName.MatchString(n.Attr("name", "")) {
@@ -134,9 +135,15 @@ func (v View) expandUse(n Node, values map[string]string) ([]Node, map[string]st
 			return nil, nil, fmt.Errorf("undeclared component prop %q", key)
 		}
 	}
-	fills := map[string][]Node{}
+	declaredSlots := map[string]bool{}
+    var findSlots func([]Node)
+    findSlots=func(nodes []Node){for _,child:=range nodes{if child.Kind=="slot"{declaredSlots[child.Attr("name","")]=true};findSlots(child.Children)}}
+    findSlots(part.Children)
+    fills := map[string][]Node{}
 	for _, child := range n.Children {
-		fills[child.Attr("slot", "")] = child.Children
-	}
+        slot:=child.Attr("slot","")
+        if !declaredSlots[slot]{return nil,nil,fmt.Errorf("unknown component slot %q",slot)}
+        fills[slot] = child.Children
+    }
 	return replaceSlots(part.Children, fills), local, nil
 }

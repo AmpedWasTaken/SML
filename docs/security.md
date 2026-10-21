@@ -24,3 +24,10 @@ SML has no arbitrary script interpreter, external URL fetching, shell execution,
 ## Compatibility warning
 
 The extracted engine retains legacy read-only command names and typed plugin-action metadata originating from Sentinel V5. They are presentation contracts only: the standalone library **does not** provide the corresponding services or authorize their dispatch.
+
+
+## Generic actions and components
+
+`action="app.refresh"` is a validated **descriptor**, never executable text. The embedding host must authorize and dispatch it. `id` is a stable UI identifier, not a capability token. Legacy command allowlisting continues only for backwards compatibility.
+
+Custom component names and prop declarations are validated, and component files are local-only and depth-bounded. Props are string interpolation, not Go expressions or shell commands. Reusing a component does not grant access to any additional binding.

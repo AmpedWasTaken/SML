@@ -53,3 +53,12 @@ Call `view.GradientStyles()` for an `appearance` view. The returned values are `
 Invalid parse input returns an error. `LoadDir` returns errors for invalid views or includes. Use `view.RenderChecked(values, width)` when your host needs errors as Go `error` values. For compatibility, `RenderWidth` reports late render failures as a visible `SML render error:` line. The CLI uses `RenderChecked` and exits nonzero on render errors.
 
 For production use, maintain an immutable last-known-good view snapshot and swap only when `LoadDir` succeeds.
+
+
+## Structured frames and cells
+
+For new applications, call `view.RenderFrame(bindings, width)`. Its `Frame` includes `Lines`, a two-dimensional `Cells` matrix, `Elements` with bounds, and `Hotspots` with stable IDs and host-owned actions. The frame measures positions in terminal cells, not Go runes or byte offsets. See [layout and interaction geometry](layout.md).
+
+## Host-owned actions
+
+Use `<button label="Refresh" id="refresh" action="app.refresh"/>` to emit an action ID without embedding application-specific commands into the library. The host checks the current user's permissions, maps `hotspot.Action` to an authorized handler, and performs any side effects. SML never dispatches the action.
