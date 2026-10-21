@@ -1,4 +1,4 @@
-package sml
+package engine
 
 import "github.com/AmpedWasTaken/SML/internal/textcell"
 
