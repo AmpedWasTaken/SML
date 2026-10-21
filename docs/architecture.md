@@ -38,10 +38,13 @@ RenderWidth and RenderChecked interpolate string bindings, evaluate bounded `der
 ## Module layout
 
 - Root package `sml`: parser, validation, presentation, controls, media and view loading.
+- `internal/textcell/`: private Unicode grapheme width, clipping, padding and wrapping primitives. Public compatibility functions stay in root `cells.go`.
+- `legacy_commands.go`: isolated compatibility allowlist for older host commands. New applications should use `action` metadata.
 - `terminal/`: optional, independently importable RGB/gradient presentation helpers.
 - `cmd/sml/`: CLI for validation and text rendering.
 - `examples/`: sample views and a reusable component tree.
 - `docs/`: language spec, component catalog, public API, CLI and security boundaries.
+- `.github/`: CI, contribution templates, and dependency updates. See [project structure](project-structure.md) for ownership and placement.
 
 ## Compatibility and extensions
 

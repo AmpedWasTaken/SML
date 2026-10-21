@@ -1,0 +1,30 @@
+name: Feature request
+description: Propose reusable functionality for SML (not application-specific commands).
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem and use case
+      description: Who benefits and what cannot be expressed today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed API or syntax
+      description: Show a minimal SML / Go example when applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: Project boundaries
+      options:
+        - label: I understand SML is a declarative renderer and does not execute commands or handle permissions.
+          required: true

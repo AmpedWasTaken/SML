@@ -7,7 +7,7 @@
 **A declarative, lightweight TUI view engine for Go.**  
 Compose terminal screens with familiar XML-like elements, supply live data from Go, and keep presentation separate from your application logic.
 
-[Get started](#quick-start) · [Language guide](docs/language.md) · [Go API](docs/go-api.md) · [Components](docs/components.md) · [Examples](examples/) · [Contributing](CONTRIBUTING.md)
+[Get started](#quick-start) · [Language guide](docs/language.md) · [Go API](docs/go-api.md) · [Components](docs/components.md) · [Examples](examples/) · [Contributing](CONTRIBUTING.md) · [Roadmap](docs/roadmap.md)
 
 [![Go CI](https://github.com/AmpedWasTaken/SML/actions/workflows/go.yml/badge.svg)](https://github.com/AmpedWasTaken/SML/actions/workflows/go.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/AmpedWasTaken/SML.svg)](https://pkg.go.dev/github.com/AmpedWasTaken/SML)
@@ -162,7 +162,7 @@ if err != nil {
 // Your application decides how and when to paint these lines.
 ```
 
-See [the Go API guide](docs/go-api.md), [complete component reference](docs/components.md) and [example assets](examples/assets/).
+See [the Go API guide](docs/go-api.md), [complete component reference](docs/components.md), [example assets](examples/assets/) and [host-owned action example](examples/host-actions/).
 
 ## CLI and development
 
@@ -186,6 +186,9 @@ For commonly used commands, run `make check` (when Make is available). The CLI r
 | [Cell layout](docs/layout.md) | Unicode widths, frames, bounds and stable control IDs |
 | [CLI](docs/cli.md) | Commands, arguments and asset loading |
 | [Architecture](docs/architecture.md) | Parser, validator, renderer, host integration, limitations |
+| [Project structure](docs/project-structure.md) | Package boundaries, extension points, file placement |
+| [Roadmap](docs/roadmap.md) | Proposed improvements and contribution priorities |
+| [Releasing](docs/releasing.md) | Versioning, compatibility, release checklist |
 | [Security](docs/security.md) | Resource limits, action trust boundaries and safe embedding |
 | [Migrating from Sentinel V5](docs/migration.md) | Package imports and host responsibilities |
 | [Contributing](CONTRIBUTING.md) | Local tooling, tests and PRs |
@@ -200,7 +203,7 @@ The project includes Go tests and GitHub CI. The published package does not cont
 
 Issues, examples, bug reports, and PRs are welcome. Please include a small reproducer for rendering bugs, test both narrow and wide terminals, and document any language-level changes.
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) and [the changelog](CHANGELOG.md).
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), report bugs using [issue templates](.github/ISSUE_TEMPLATE/), and see [SUPPORT.md](SUPPORT.md) for help. Read [the changelog](CHANGELOG.md), [project structure](docs/project-structure.md), [security policy](SECURITY.md), and [code of conduct](CODE_OF_CONDUCT.md) before contributing.
 
 ## License
 

@@ -11,31 +11,40 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Tests, vet, and examples
+  check:
+    name: Go ${{ matrix.go }} checks
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.23.x', 'stable']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod
-          cache: false
+          go-version: ${{ matrix.go }}
+          cache: true
       - name: Check formatting
         run: |
           unformatted="$(gofmt -l $(git ls-files '*.go'))"
           if [ -n "$unformatted" ]; then
+            echo "Unformatted Go files:"
             echo "$unformatted"
             exit 1
           fi
       - name: Download dependencies
         run: go mod download
       - name: Test
-        run: go test ./...
+        run: go test -count=1 ./...
       - name: Vet
         run: go vet ./...
-      - name: Validate example screen
-        run: go run ./cmd/sml validate examples/quickstart.sml
-      - name: Validate asset tree
-        run: go run ./cmd/sml validate examples/assets
-      - name: Render example
-        run: go run ./cmd/sml render -set app.health=online -set app.cpu=37 examples/quickstart.sml
+      - name: Race detector
+        if: matrix.go == 'stable'
+        run: go test -race -count=1 ./...
+      - name: Validate examples
+        run: |
+          go run ./cmd/sml validate examples/quickstart.sml
+          go run ./cmd/sml validate examples/assets
+          go run ./cmd/sml render -set app.health=online -set app.cpu=37 examples/quickstart.sml
+          go run ./examples/host-actions
