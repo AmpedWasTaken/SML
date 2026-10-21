@@ -35,6 +35,7 @@ var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
 var uiLabel = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _./:+-]{0,46}$`)
 var actionID = regexp.MustCompile("^[a-z][a-z0-9_.-]{0,63}$")
+
 // button is a read-only command or page navigation. A future extension API
 // may register additional typed safe actions without giving SML a shell.
 func validateControl(n Node) error {
