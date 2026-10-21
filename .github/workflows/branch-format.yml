@@ -30,3 +30,8 @@ jobs:
             git commit -m 'style: gofmt SML engine code'
             git push origin HEAD:feat/p0-layout-actions-p1-components-20261021
           fi
+
+      - name: Verify package and CLI tests
+        run: go test ./...
+      - name: Vet package
+        run: go vet ./...
