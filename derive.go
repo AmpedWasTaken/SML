@@ -64,7 +64,7 @@ func validateDerive(n Node) error {
 type derivedError string
 
 func (e derivedError) Error() string { return "SML: " + string(e) }
-func errDerived(s string) error       { return derivedError(s) }
+func errDerived(s string) error      { return derivedError(s) }
 
 // ResolveBindings calculates bounded, validated view-local values from
 // already-authorized input bindings. Declarations evaluate in screen order:
@@ -132,7 +132,7 @@ func (v View) ResolveBindings(input map[string]string) map[string]string {
 
 func requiresSML3(nodes []Node) bool {
 	for _, n := range nodes {
-			_,hasGate:=n.Attrs["enabled-when"]
+		_, hasGate := n.Attrs["enabled-when"]
 		if n.Kind == "derive" || n.Kind == "otherwise" || hasStyleAttributes(n) || hasGate || requiresSML3(n.Children) {
 			return true
 		}
@@ -150,14 +150,18 @@ func formatUptime(seconds int64) string {
 	remain := seconds % 60
 	switch {
 	case days > 0:
-		if hours > 0 {return strconv.FormatInt(days,10)+"d "+strconv.FormatInt(hours,10)+"h"}
-		return strconv.FormatInt(days,10)+"d"
+		if hours > 0 {
+			return strconv.FormatInt(days, 10) + "d " + strconv.FormatInt(hours, 10) + "h"
+		}
+		return strconv.FormatInt(days, 10) + "d"
 	case hours > 0:
-		if minutes > 0 {return strconv.FormatInt(hours,10)+"h "+strconv.FormatInt(minutes,10)+"m"}
-		return strconv.FormatInt(hours,10)+"h"
+		if minutes > 0 {
+			return strconv.FormatInt(hours, 10) + "h " + strconv.FormatInt(minutes, 10) + "m"
+		}
+		return strconv.FormatInt(hours, 10) + "h"
 	case minutes > 0:
-		return strconv.FormatInt(minutes,10)+"m"
+		return strconv.FormatInt(minutes, 10) + "m"
 	default:
-		return strconv.FormatInt(remain,10)+"s"
+		return strconv.FormatInt(remain, 10) + "s"
 	}
 }
