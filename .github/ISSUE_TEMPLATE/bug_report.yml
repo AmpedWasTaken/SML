@@ -1,0 +1,49 @@
+name: Bug report
+description: Report incorrect parsing, rendering, interaction, or documentation.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! Please include a minimal example that reproduces the problem. Do not include secrets.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: ["Parser / validation", "Layout / Unicode", "Actions / interaction", "Components", "CLI / tooling", "Documentation", "Other"]
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Include a minimal .sml snippet and Go or CLI command.
+      placeholder: |
+        <screen name="example"><text>Hello</text></screen>
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: SML version or commit
+      placeholder: "main at <commit SHA>, or tag"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Go version / OS / terminal
+      placeholder: "Go 1.23, Linux, xterm-256color"

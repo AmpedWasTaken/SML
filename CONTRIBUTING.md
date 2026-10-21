@@ -1,47 +1,59 @@
-# Contributing
+# Contributing to SML
 
-Thanks for helping build a reusable Go-first terminal markup language.
+Thank you for helping make declarative terminal UIs useful beyond any single application. We welcome bug fixes, documentation, examples, performance improvements, and well-scoped feature proposals.
 
-## Before opening a PR
+Please read the [Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md). Security reports containing exploit details must not be filed as public issues.
 
-1. Read [the architecture](docs/architecture.md), [the language guide](docs/language.md), and [the security model](docs/security.md).
-2. Open an issue for major new syntax or public API changes so backward compatibility can be discussed.
-3. Prefer small, focused PRs with representative SML snippets and tests.
-4. Update examples and documentation when changing markup semantics.
+## Find a good first contribution
 
-## Development
+- Browse the [roadmap](docs/roadmap.md), issues, and open pull requests.
+- A small, reproducible bug or documentation improvement can be submitted directly.
+- For syntax, architecture, exported Go API changes, or breaking behavior, open a feature request **before** implementation.
+- Avoid application-specific commands, permission assumptions, vendor dependencies, or executable directives in SML markup.
 
-Requires Go 1.23+.
+## Local setup
+
+Go 1.23 or newer is required.
 
 ```bash
 git clone https://github.com/AmpedWasTaken/SML.git
 cd SML
-gofmt -w .
-go test ./...
-go vet ./...
-go run ./cmd/sml validate examples/assets
+go mod download
+make check
+go test -race ./...
 ```
 
-Or use `make check` to run formatting checks, tests, vet and CLI examples.
+Without `make`, use `gofmt -l` to check formatting, `go test ./...`, `go vet ./...`, and the example commands in the [README](README.md).
 
-## Changes we value
+## Code organization
 
-- Better terminal-width handling, with edge-case tests.
-- Clear error messages and diagnostics for malformed SML.
-- Performance improvements that preserve bounded resource use.
-- Interop examples with real Go TUI input/event systems.
-- Accessible, narrow-terminal layouts and complete docs.
+See [project structure](docs/project-structure.md). Keep exported Go types/functions in the root `sml` package unless a separate package is justified. Put internal helpers with no public API in `internal/`, optional reusable public terminal helpers in `terminal/`, examples in `examples/`, and executable tools in `cmd/`.
 
-SML markup is **not** an executable scripting language. Avoid shell execution, arbitrary eval, unrestricted file paths, user-controlled network access or permissions encoded in markup.
+Keep changes focused. Do not create a folder per root file: in Go, package boundaries are directories, and moving a public declaration to a new package changes import compatibility.
 
-## PR checklist
+## Tests and documentation
 
-- [ ] Go is `gofmt`-formatted.
-- [ ] `go test ./...` and `go vet ./...` pass.
-- [ ] Invalid input and security-sensitive changes have tests.
-- [ ] New behavior is documented with an actual `.sml` example.
-- [ ] v1/v2/v3 compatibility impact is stated.
+- Add tests for new behavior, edge cases, malformed SML, and previously reported regressions.
+- For layout changes, include narrow/wide terminal widths, ANSI-free output, combining marks, emoji, CJK characters, and action hitboxes when applicable.
+- For markup syntax changes, test parsing, validation, rendering, error messages, and version compatibility.
+- Update the relevant `docs/` page and provide a runnable `.sml` or Go example.
+- Keep resource limits and untrusted-input boundaries intact. The host owns dispatch and authorization; SML never executes actions itself.
+- Add a note to `CHANGELOG.md` for user-visible changes.
+
+## Pull requests
+
+1. Fork the repository and create a descriptive branch from `main`.
+2. Make one focused change and use `gofmt` on changed Go files.
+3. Run `make check` and `go test -race ./...` when possible.
+4. Open a pull request and fill in the template, including compatibility impact and tests.
+5. Address review feedback; maintainers decide on release timing and API stability.
+
+We prefer small PRs that are easy to review, but cross-cutting refactors are welcome with a clear migration plan. Do not commit local build outputs, generated debug files, or secrets.
+
+## Compatibility
+
+SML is pre-1.0. Existing v1/v2/v3 markup should keep working unless a change is explicitly reviewed as breaking. Public API changes need documented migration paths. See [release guidelines](docs/releasing.md).
 
 ## License
 
-By contributing, you agree to release your contributions under the [MIT License](LICENSE).
+Contributions are licensed under the repository's [MIT license](LICENSE). Submit only work you have the right to license.
