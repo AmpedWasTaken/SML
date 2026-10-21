@@ -1,0 +1,26 @@
+name: Go CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - run: go test ./...
+      - run: go vet ./...
+      - run: go run ./cmd/sml validate examples/dashboard.sml
+      - run: go run ./cmd/sml validate examples/assets
+      - run: go run ./cmd/sml render -set service.health=online examples/dashboard.sml
