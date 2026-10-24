@@ -29,6 +29,19 @@ Terminal columns are calculated with `github.com/rivo/uniseg` using grapheme clu
 
 The new renderer wraps `<text>` content on word boundaries when possible and breaks long words only between complete graphemes.
 
+## Weighted grid panes
+
+SML v3 structural grids support `weights="1,3,2"`, used as ratios rather
+than fixed pixels. Each rendered row receives its complete available width,
+with gaps accounted for and remainder allocated deterministically. Panes
+cannot overlap; layouts collapse into one column when a 14-cell minimum
+cannot be met. The single-column fallback still works with 12-cell frames.
+
+Use this for compact monitors, left navigation + main editors, and a third
+inspector pane. It doesn't implement adjustable dividers, independently
+scrolling panes, overlays, ANSI colors, or an event loop. Those require
+separate runtime capabilities in the host application.
+
 ## Scope and future work
 
 `RenderFrame` is a **structural frame**, not a terminal input loop. Hosts still manage cursor movement, scrolling, key events, mouse support and authorization. The renderer currently targets up to 240 columns / 3,000 rows and does not implement arbitrary CSS flex properties, syntax-colored ANSI escape sequences inside bindings, bidirectional text layout, or clipping of complex multi-row controls. These remain separate engineering work.

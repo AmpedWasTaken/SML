@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -22,6 +23,36 @@ var allowed = map[string]bool{
 	"toggle": true, "choice": true, "input": true, "number": true,
 	"section": true, "field": true, "empty": true, "derive": true, "otherwise": true,
 	"use": true, "slot": true, "fill": true,
+}
+
+// validateGridWeights rejects malformed layouts before hot reload. Grid weights
+// are ratios (not pixels), so designers can share one view across SSH clients.
+func validateGridWeights(nodes []Node, version string) error {
+	for _, n := range nodes {
+		if raw, ok := n.Attrs["weights"]; ok {
+			if n.Kind != "grid" || version != "3" {
+				return errors.New("SML grid weights require <grid> in version 3")
+			}
+			cols, err := strconv.Atoi(n.Attr("columns", "3"))
+			if err != nil || cols < 1 || cols > 8 {
+				return errors.New("weighted SML grid columns must be 1..8")
+			}
+			parts := strings.Split(raw, ",")
+			if len(parts) != cols {
+				return errors.New("SML grid weights must match declared columns")
+			}
+			for _, part := range parts {
+				weight, err := strconv.Atoi(strings.TrimSpace(part))
+				if err != nil || weight < 1 || weight > 16 {
+					return errors.New("SML grid weights must be integers 1..16")
+				}
+			}
+		}
+		if err := validateGridWeights(n.Children, version); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Parse rejects invalid XML and unknown components before publishing a view.
@@ -110,6 +141,9 @@ func Parse(data []byte) (View, error) {
 		return View{}, err
 	}
 	if err := validateUI(view.Nodes, name); err != nil {
+		return View{}, err
+	}
+	if err := validateGridWeights(view.Nodes, version); err != nil {
 		return View{}, err
 	}
 	if err := validateStyleSystem(view.Nodes); err != nil {
