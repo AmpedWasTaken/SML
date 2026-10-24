@@ -167,6 +167,50 @@ func (v View) renderLayoutNodes(nodes []Node, values map[string]string, width, d
 	return result, nil
 }
 
+
+ // weightedGridWidths allocates complete display-cell columns. Every visible
+ // pane gets at least 14 cells; otherwise the parent grid collapses to one
+ // column instead of rendering broken or overlapping borders.
+func weightedGridWidths(width, gap, count int, weights []int) ([]int, bool) {
+	if count < 1 || count > 8 || gap < 0 {
+		return nil, false
+	}
+	available := width - gap*(count-1)
+	if available < count*14 {
+		return nil, false
+	}
+	total := 0
+	for i := 0; i < count; i++ {
+		weight := 1
+		if i < len(weights) {
+			weight = weights[i]
+		}
+		if weight < 1 || weight > 16 {
+			return nil, false
+		}
+		total += weight
+	}
+	result := make([]int, count)
+	remainingWidth, remainingWeight := available, total
+	for i := 0; i < count; i++ {
+		weight := 1
+		if i < len(weights) {
+			weight = weights[i]
+		}
+		if i == count-1 {
+			result[i] = remainingWidth
+		} else {
+			result[i] = remainingWidth * weight / remainingWeight
+		}
+		if result[i] < 14 {
+			return nil, false
+		}
+		remainingWidth -= result[i]
+		remainingWeight -= weight
+	}
+	return result, true
+}
+
 func (v View) renderLayoutNode(n Node, values map[string]string, width, depth int, path string) (layoutBlock, error) {
 	if depth > maxDepth {
 		return layoutBlock{}, errors.New("SML layout depth exceeded")
@@ -272,16 +316,24 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		}
 		gap := boundedInt(n.Attr("gap", "2"), 2, 0, 8)
 		cols = min(cols, len(n.Children))
-		if (width-gap*(cols-1))/cols < 14 {
+		var weights []int
+		if n.Kind == "grid" && n.Attr("weights", "") != "" {
+			for _, part := range strings.Split(n.Attr("weights", ""), ",") {
+				weights = append(weights, boundedInt(strings.TrimSpace(part), 1, 1, 16))
+			}
+		}
+		if _, ok := weightedGridWidths(width, gap, cols, weights); !ok {
 			cols = 1
 		}
-		childWidth := max(12, (width-gap*(cols-1))/cols)
 		for start := 0; start < len(n.Children); start += cols {
 			count := min(cols, len(n.Children)-start)
+			paneWidths, _ := weightedGridWidths(width, gap, count, weights)
 			parts := make([]locatedBlock, 0, count)
 			h := 0
+			x := 0
 			for col := 0; col < count; col++ {
 				index := start + col
+				childWidth := paneWidths[col]
 				child, err := v.renderLayoutNode(n.Children[index], values, childWidth, depth+1, fmt.Sprintf("%s/%d:%s", path, index, n.Children[index].Kind))
 				if err != nil {
 					return layoutBlock{}, err
@@ -289,7 +341,8 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 				if len(child.lines) > h {
 					h = len(child.lines)
 				}
-				parts = append(parts, locatedBlock{block: child, x: col * (childWidth + gap)})
+				parts = append(parts, locatedBlock{block: child, x: x})
+				x += childWidth + gap
 			}
 			rendered := renderCanvas(width, h, parts)
 			baseY := len(result.lines)
