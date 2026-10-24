@@ -224,7 +224,8 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
     // Repeated component controls must get a stable, iteration-local identity.
     // Otherwise two <button id="inspect"> controls in a <repeat> produce a
     // duplicate hotspot error and the entire SML frame fails to render.
-    if controlNode(n) && strings.Contains(path, "/repeat:") {
+    if controlNode(n) && (strings.Contains(path, "/repeat:") ||
+        strings.Contains(path, "/use:") || strings.Contains(path, "/include:")) {
         id = path + "/id:" + id
     }
     switch n.Kind {
