@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/rivo/uniseg"
 )
 
 // GradientStyle is presentation-only, parsed from a validated SML <gradient>
@@ -35,11 +37,14 @@ func PaintGradientLine(value string, style GradientStyle, elapsedSeconds, rowFra
 	if style.Animated {
 		phase = PhaseForTime(elapsedSeconds, style.Speed)
 	}
-	chars := []rune(value)
+	// Work with grapheme clusters, not runes. Inserting ANSI codes inside a
+	// combining sequence or an emoji ZWJ cluster breaks rendering in SSH clients.
 	count := 0
-	for _, r := range chars {
-		if r != '\n' && r != '\r' {
-			count++
+	clusters := uniseg.NewGraphemes(value)
+	for clusters.Next() {
+		glyph := clusters.Str()
+		if glyph != "\n" && glyph != "\r" && glyph != "\r\n" {
+			count += max(0, clusters.Width())
 		}
 	}
 	if count == 0 {
@@ -48,9 +53,11 @@ func PaintGradientLine(value string, style GradientStyle, elapsedSeconds, rowFra
 	var result strings.Builder
 	col := 0
 	rowFraction = math.Max(0, math.Min(1, rowFraction))
-	for _, r := range chars {
-		if r == '\n' || r == '\r' {
-			result.WriteRune(r)
+	clusters = uniseg.NewGraphemes(value)
+	for clusters.Next() {
+		glyph := clusters.Str()
+		if glyph == "\n" || glyph == "\r" || glyph == "\r\n" {
+			result.WriteString(glyph)
 			continue
 		}
 		fraction := 0.0
@@ -81,12 +88,12 @@ func PaintGradientLine(value string, style GradientStyle, elapsedSeconds, rowFra
 				color = SampleLinear(style.Colors, fraction)
 			}
 		}
-		if r == ' ' || r == '\t' {
-			result.WriteRune(r)
+		if strings.Trim(glyph, " \t") == "" {
+			result.WriteString(glyph)
 		} else {
-			fmt.Fprintf(&result, "\x1b[38;2;%d;%d;%dm%c\x1b[0m", color.R, color.G, color.B, r)
+			fmt.Fprintf(&result, "\x1b[38;2;%d;%d;%dm%s\x1b[0m", color.R, color.G, color.B, glyph)
 		}
-		col++
+		col += max(0, clusters.Width())
 	}
 	return result.String()
 }
