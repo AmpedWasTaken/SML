@@ -146,7 +146,14 @@ func (v View) mediaFrames(name string, animated bool) (mediaEntry, error) {
 	if err != nil || !info.Mode().IsRegular() || info.Size() > maxMediaFile {
 		return mediaEntry{}, fmt.Errorf("media asset %q missing or invalid", name)
 	}
-	if cached, ok := mediaCache.Load(file); ok {
+	// The same .gif may appear in both <image> (static first frame) and
+	// <gif> (all frames) nodes. Never reuse a static decode for an animated
+	// consumer or vice versa.
+	cacheKey := file + "#still"
+	if animated {
+		cacheKey = file + "#animated"
+	}
+	if cached, ok := mediaCache.Load(cacheKey); ok {
 		entry := cached.(mediaEntry)
 		if entry.size == info.Size() && entry.modified.Equal(info.ModTime()) {
 			return entry, nil
@@ -161,7 +168,7 @@ func (v View) mediaFrames(name string, animated bool) (mediaEntry, error) {
 		return mediaEntry{}, err
 	}
 	entry := mediaEntry{modified: info.ModTime(), size: info.Size(), frames: frames, delays: delays}
-	mediaCache.Store(file, entry)
+	mediaCache.Store(cacheKey, entry)
 	return entry, nil
 }
 
