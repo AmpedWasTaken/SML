@@ -167,10 +167,9 @@ func (v View) renderLayoutNodes(nodes []Node, values map[string]string, width, d
 	return result, nil
 }
 
-
 // weightedGridWidths allocates complete display-cell columns. Every visible
- // pane gets at least 14 cells; otherwise the parent grid collapses to one
- // column instead of rendering broken or overlapping borders.
+// pane gets at least 14 cells; otherwise the parent grid collapses to one
+// column instead of rendering broken or overlapping borders.
 func weightedGridWidths(width, gap, count int, weights []int) ([]int, bool) {
 	if count < 1 || count > 8 || gap < 0 {
 		return nil, false
