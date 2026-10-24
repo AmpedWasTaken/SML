@@ -220,8 +220,14 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 	}
 	width = max(12, min(240, width))
 	result := layoutBlock{}
-	id := n.Attr("id", path)
-	switch n.Kind {
+    id := n.Attr("id", path)
+    // Repeated component controls must get a stable, iteration-local identity.
+    // Otherwise two <button id="inspect"> controls in a <repeat> produce a
+    // duplicate hotspot error and the entire SML frame fails to render.
+    if controlNode(n) && strings.Contains(path, "/repeat:") {
+        id = path + "/id:" + id
+    }
+    switch n.Kind {
 	case "gradient", "derive":
 		return result, nil
 	case "column", "component", "screen":
