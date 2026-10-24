@@ -28,16 +28,16 @@ func interpolate(s string, values map[string]string) string {
 	s = binding.ReplaceAllStringFunc(s, func(token string) string {
 		name := binding.FindStringSubmatch(token)[1]
 		v := values[name]
-        if len(v) > 4096 {
-            // Bound input in bytes without slicing through the middle of an
-            // UTF-8 sequence. A partially sliced emoji used to display as
-            // a replacement character in panels, titles and table cells.
-            v = v[:4096]
-            for !utf8.ValidString(v) {
-                v = v[:len(v)-1]
-            }
-        }
-        return safe(v)
+		if len(v) > 4096 {
+			// Bound input in bytes without slicing through the middle of an
+			// UTF-8 sequence. A partially sliced emoji used to display as
+			// a replacement character in panels, titles and table cells.
+			v = v[:4096]
+			for !utf8.ValidString(v) {
+				v = v[:len(v)-1]
+			}
+		}
+		return safe(v)
 	})
 	return safe(s)
 }
