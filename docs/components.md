@@ -9,7 +9,7 @@ This is a concise reference to the currently supported XML-like SML elements. Ea
 | `screen` | Root view | `<screen name="home" version="3">...</screen>` |
 | `column` | Vertical stack | `<column><text>A</text><text>B</text></column>` |
 | `row` | Horizontal layout | `<row><text>Left</text><text>Right</text></row>` |
-| `grid` | Responsive columns | `<grid columns="3" gap="2" collapse-below="65">...</grid>` |
+| `grid` | Responsive or weighted columns | `<grid columns="3" weights="1,3,2" gap="2" collapse-below="65">...</grid>` |
 | `panel` | Bordered section | `<panel title="Stats"><text>Ready</text></panel>` |
 | `section` | Titled group | `<section title="Overview">...</section>` |
 | `text` | Plain text / binding | `<text>Hello {{user.name}}</text>` |
@@ -23,6 +23,29 @@ This is a concise reference to the currently supported XML-like SML elements. Ea
 | `spacer` | Empty rows | `<spacer size="1"/>` |
 | `prompt` | Text prompt marker | `<prompt prefix="> "/>` |
 | `banner` | Local ASCII file | `<banner src="logo.txt"/>` |
+
+### Proportional panes in SML v3
+
+For terminal apps with sidebars, inspectors, request/response panes, or metric
+dashboards, set `weights` on a `grid` to distribute *terminal cells* by
+relative share. Weights are **integers 1–16**, one for each declared column
+(1–8 columns). The structural `RenderFrame` and `RenderInteractive` paths
+use weighted widths; legacy `RenderWidth` preserves its older layout.
+
+```xml
+<screen name="workspace" version="3">
+  <grid columns="3" weights="1,3,2" gap="1" collapse-below="70">
+    <panel title="NAVIGATION"><text>Folders</text></panel>
+    <panel title="WORKSPACE"><text>Requests or logs</text></panel>
+    <panel title="INSPECTOR"><text>Details</text></panel>
+  </grid>
+</screen>
+```
+
+If the terminal is narrower than `collapse-below`, or any weighted pane
+would fall below 14 cells, the grid stacks vertically. Short final rows
+recalculate weights for their visible children. Hotspots keep the correct
+positions after wrapping. Invalid weight vectors fail parsing, not rendering.
 
 ## Data and charts
 
