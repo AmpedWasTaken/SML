@@ -176,7 +176,11 @@ func weightedGridWidths(width, gap, count int, weights []int) ([]int, bool) {
 		return nil, false
 	}
 	available := width - gap*(count-1)
-	if available < count*14 {
+	minWidth := 14
+	if count == 1 {
+		minWidth = 12
+	}
+	if available < count*minWidth {
 		return nil, false
 	}
 	total := 0
@@ -202,7 +206,7 @@ func weightedGridWidths(width, gap, count int, weights []int) ([]int, bool) {
 		} else {
 			result[i] = remainingWidth * weight / remainingWeight
 		}
-		if result[i] < 14 {
+		if result[i] < minWidth {
 			return nil, false
 		}
 		remainingWidth -= result[i]
