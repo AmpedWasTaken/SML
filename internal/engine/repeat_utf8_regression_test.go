@@ -56,3 +56,29 @@ func TestLongInterpolationKeepsUTF8RuneBoundary(t *testing.T) {
         t.Fatalf("short Unicode binding changed unexpectedly: %q",short)
     }
 }
+
+func TestNarrowPaddedPanelClipsHitboxInsteadOfBreakingFrame(t *testing.T) {
+    view,err:=Parse([]byte(`<screen name="home" version="3">
+        <panel padding="3" border="round">
+            <button id="narrow" label="Inspect" page="home"/>
+        </panel>
+    </screen>`))
+    if err!=nil {t.Fatal(err)}
+    for _,width:=range []int{12,14,16,18,24,80} {
+        frame,err:=view.RenderFrame(nil,width)
+        if err!=nil {t.Fatalf("width %d should render after clipping hotspots: %v",width,err)}
+        for _,spot:=range frame.Hotspots {
+            if spot.Start<0||spot.End>width||spot.Start>=spot.End{
+                t.Fatalf("width %d has invalid hotspot %+v",width,spot)
+            }
+            if spot.Line<0 || spot.Line>=frame.Height {
+                t.Fatalf("width %d has offscreen hotspot %+v",width,spot)
+            }
+        }
+        for _,line:=range frame.Lines {
+            if CellWidth(line)>width {
+                t.Fatalf("width %d frame has an overflowing line %q",width,line)
+            }
+        }
+    }
+}
