@@ -175,53 +175,73 @@ func (v View) renderLayoutNodes(nodes []Node, values map[string]string, width, d
 // first and distribute the remaining space among the others. Previously the
 // entire grid collapsed to one column even in a wide terminal.
 func weightedGridWidths(width, gap, count int, weights []int) ([]int, bool) {
- if count < 1 || count > 8 || gap < 0 { return nil, false }
- available := width - gap*(count-1)
- minWidth := 14
- if count == 1 { minWidth = 12 }
- if available < count*minWidth { return nil, false }
+	if count < 1 || count > 8 || gap < 0 {
+		return nil, false
+	}
+	available := width - gap*(count-1)
+	minWidth := 14
+	if count == 1 {
+		minWidth = 12
+	}
+	if available < count*minWidth {
+		return nil, false
+	}
 
- actual := make([]int, count)
- total := 0
- for i:=0;i<count;i++ {
-  actual[i] = 1
-  if i<len(weights) { actual[i] = weights[i] }
-  if actual[i]<1 || actual[i]>16 { return nil,false }
-  total+=actual[i]
- }
- result:=make([]int,count)
- pinned:=make([]bool,count)
- remainingWidth,remainingWeight:=available,total
- for {
-  changed:=false
-  // Detect undersized proportional panes, including integer rounding. Pin
-  // them at the minimum and recompute remaining ratios until all fit.
-  for i:=0;i<count;i++ {
-   if pinned[i] { continue }
-   allocation:=remainingWidth*actual[i]/remainingWeight
-   if allocation<minWidth {
-    result[i]=minWidth
-    pinned[i]=true
-    remainingWidth-=minWidth
-    remainingWeight-=actual[i]
-    changed=true
-   }
-  }
-  if !changed { break }
-  if remainingWeight==0 { return result,remainingWidth==0 }
- }
- for i:=0;i<count;i++ {
-  if pinned[i] { continue }
-  if remainingWeight==actual[i] {
-   result[i]=remainingWidth
-  } else {
-   result[i]=remainingWidth*actual[i]/remainingWeight
-  }
-  if result[i]<minWidth { return nil,false }
-  remainingWidth-=result[i]
-  remainingWeight-=actual[i]
- }
- return result,true
+	actual := make([]int, count)
+	total := 0
+	for i := 0; i < count; i++ {
+		actual[i] = 1
+		if i < len(weights) {
+			actual[i] = weights[i]
+		}
+		if actual[i] < 1 || actual[i] > 16 {
+			return nil, false
+		}
+		total += actual[i]
+	}
+	result := make([]int, count)
+	pinned := make([]bool, count)
+	remainingWidth, remainingWeight := available, total
+	for {
+		changed := false
+		// Detect undersized proportional panes, including integer rounding. Pin
+		// them at the minimum and recompute remaining ratios until all fit.
+		for i := 0; i < count; i++ {
+			if pinned[i] {
+				continue
+			}
+			allocation := remainingWidth * actual[i] / remainingWeight
+			if allocation < minWidth {
+				result[i] = minWidth
+				pinned[i] = true
+				remainingWidth -= minWidth
+				remainingWeight -= actual[i]
+				changed = true
+			}
+		}
+		if !changed {
+			break
+		}
+		if remainingWeight == 0 {
+			return result, remainingWidth == 0
+		}
+	}
+	for i := 0; i < count; i++ {
+		if pinned[i] {
+			continue
+		}
+		if remainingWeight == actual[i] {
+			result[i] = remainingWidth
+		} else {
+			result[i] = remainingWidth * actual[i] / remainingWeight
+		}
+		if result[i] < minWidth {
+			return nil, false
+		}
+		remainingWidth -= result[i]
+		remainingWeight -= actual[i]
+	}
+	return result, true
 }
 
 func (v View) renderLayoutNode(n Node, values map[string]string, width, depth int, path string) (layoutBlock, error) {
