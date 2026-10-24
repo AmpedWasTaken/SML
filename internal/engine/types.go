@@ -25,6 +25,9 @@ type View struct {
 	Name   string
 	Nodes  []Node
 	assets string
+	// loadedComponents is populated by LoadDir, pinning validated includes
+	// to one immutable snapshot until an explicit reload succeeds.
+	loadedComponents map[string]Node
 }
 
 func (v View) WithAssets(dir string) View { v.assets = dir; return v }
