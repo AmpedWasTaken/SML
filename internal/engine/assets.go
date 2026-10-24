@@ -77,11 +77,13 @@ func validateIncludes(v View, nodes []Node, depth int, seen map[string]bool) err
 				uncached.loadedComponents = nil
 				var err error
 				part, err = uncached.component(name)
-				if err != nil { return err }
+				if err != nil {
+					return err
+				}
 				v.loadedComponents[name] = part
 			}
 			seen[name] = true
-			if err = validateIncludes(v, part.Children, depth+1, seen); err != nil {
+			if err := validateIncludes(v, part.Children, depth+1, seen); err != nil {
 				return err
 			}
 			delete(seen, name)
