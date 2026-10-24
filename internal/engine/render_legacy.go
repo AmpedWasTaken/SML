@@ -60,6 +60,13 @@ func (v View) component(name string) (Node, error) {
 	if !validName.MatchString(name) {
 		return Node{}, errors.New("invalid SML include name")
 	}
+	// Assets loaded with LoadDir are a validated snapshot. Never read a
+	// potentially edited include directly from disk during frame rendering.
+	if v.loadedComponents != nil {
+		part, ok := v.loadedComponents[name]
+		if !ok { return Node{}, fmt.Errorf("SML component %q is not in the validated snapshot", name) }
+		return part,nil
+	}
 	if v.assets == "" {
 		return Node{}, errors.New("SML components need an assets folder")
 	}
