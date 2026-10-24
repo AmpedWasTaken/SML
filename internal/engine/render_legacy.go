@@ -64,8 +64,10 @@ func (v View) component(name string) (Node, error) {
 	// potentially edited include directly from disk during frame rendering.
 	if v.loadedComponents != nil {
 		part, ok := v.loadedComponents[name]
-		if !ok { return Node{}, fmt.Errorf("SML component %q is not in the validated snapshot", name) }
-		return part,nil
+		if !ok {
+			return Node{}, fmt.Errorf("SML component %q is not in the validated snapshot", name)
+		}
+		return part, nil
 	}
 	if v.assets == "" {
 		return Node{}, errors.New("SML components need an assets folder")
