@@ -50,6 +50,7 @@ func LoadDir(dir string) (map[string]View, error) {
 			return nil, fmt.Errorf("SML view name/file mismatch: %s", name)
 		}
 		view.assets = dir
+		view.loadedComponents = make(map[string]Node)
 		// Compile and resolve includes before publishing a new immutable snapshot.
 		if err = validateIncludes(view, view.Nodes, 0, map[string]bool{}); err != nil {
 			return nil, fmt.Errorf("%s: %w", name, err)
@@ -68,9 +69,16 @@ func validateIncludes(v View, nodes []Node, depth int, seen map[string]bool) err
 			if seen[name] {
 				return fmt.Errorf("SML include cycle: %s", name)
 			}
-			part, err := v.component(name)
-			if err != nil {
-				return err
+			part, cached := v.loadedComponents[name]
+			if !cached {
+				// Resolve an untrusted disk component at validation time only.
+				// Runtime rendering reads exclusively from loadedComponents.
+				uncached := v
+				uncached.loadedComponents = nil
+				var err error
+				part, err = uncached.component(name)
+				if err != nil { return err }
+				v.loadedComponents[name] = part
 			}
 			seen[name] = true
 			if err = validateIncludes(v, part.Children, depth+1, seen); err != nil {
