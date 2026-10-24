@@ -220,15 +220,15 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 	}
 	width = max(12, min(240, width))
 	result := layoutBlock{}
-    id := n.Attr("id", path)
-    // Repeated component controls must get a stable, iteration-local identity.
-    // Otherwise two <button id="inspect"> controls in a <repeat> produce a
-    // duplicate hotspot error and the entire SML frame fails to render.
-    if controlNode(n) && (strings.Contains(path, "/repeat:") ||
-        strings.Contains(path, "/use:") || strings.Contains(path, "/include:")) {
-        id = path + "/id:" + id
-    }
-    switch n.Kind {
+	id := n.Attr("id", path)
+	// Repeated component controls must get a stable, iteration-local identity.
+	// Otherwise two <button id="inspect"> controls in a <repeat> produce a
+	// duplicate hotspot error and the entire SML frame fails to render.
+	if controlNode(n) && (strings.Contains(path, "/repeat:") ||
+		strings.Contains(path, "/use:") || strings.Contains(path, "/include:")) {
+		id = path + "/id:" + id
+	}
+	switch n.Kind {
 	case "gradient", "derive":
 		return result, nil
 	case "column", "component", "screen":
@@ -384,30 +384,32 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 				offsetY++
 			}
 		}
-        for _, spot := range child.spots {
-            if !noBorder && n.Attr("align", "left") != "left" && spot.Line < len(child.lines) {
-                slack := max(0, innerWidth-CellWidth(child.lines[spot.Line]))
-                if n.Attr("align", "") == "center" {
-                    spot.Start += slack / 2
-                    spot.End += slack / 2
-                }
-                if n.Attr("align", "") == "right" {
-                    spot.Start += slack
-                    spot.End += slack
-                }
-            }
-            // The nested renderer must use >=12 columns, but a narrow panel
-            // with padding 2..3 can display fewer. Clip the actionable area
-            // to the *visible* panel interior before translating it.
-            // A clipped control must not invalidate the entire SML frame.
-            spot.Start=max(0,min(innerWidth,spot.Start))
-            spot.End=max(0,min(innerWidth,spot.End))
-            if spot.End<=spot.Start {continue}
-            spot.Line += offsetY
-            spot.Start += offsetX
-            spot.End += offsetX
-            result.spots = append(result.spots, spot)
-        }
+		for _, spot := range child.spots {
+			if !noBorder && n.Attr("align", "left") != "left" && spot.Line < len(child.lines) {
+				slack := max(0, innerWidth-CellWidth(child.lines[spot.Line]))
+				if n.Attr("align", "") == "center" {
+					spot.Start += slack / 2
+					spot.End += slack / 2
+				}
+				if n.Attr("align", "") == "right" {
+					spot.Start += slack
+					spot.End += slack
+				}
+			}
+			// The nested renderer must use >=12 columns, but a narrow panel
+			// with padding 2..3 can display fewer. Clip the actionable area
+			// to the *visible* panel interior before translating it.
+			// A clipped control must not invalidate the entire SML frame.
+			spot.Start = max(0, min(innerWidth, spot.Start))
+			spot.End = max(0, min(innerWidth, spot.End))
+			if spot.End <= spot.Start {
+				continue
+			}
+			spot.Line += offsetY
+			spot.Start += offsetX
+			spot.End += offsetX
+			result.spots = append(result.spots, spot)
+		}
 		for _, el := range child.elements {
 			el.Bounds.X += offsetX
 			el.Bounds.Y += offsetY
