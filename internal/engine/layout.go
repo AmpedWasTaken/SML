@@ -167,9 +167,6 @@ func (v View) renderLayoutNodes(nodes []Node, values map[string]string, width, d
 	return result, nil
 }
 
-// weightedGridWidths allocates complete display-cell columns. Every visible
-// pane gets at least 14 cells; otherwise the parent grid collapses to one
-// column instead of rendering broken or overlapping borders.
 // weightedGridWidths preserves the intended ratios whenever they fit. When
 // extreme weights would shrink a pane below its minimum, pin the small panes
 // first and distribute the remaining space among the others. Previously the
@@ -424,7 +421,9 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 			// so never leave a clickable target past a clipped panel edge.
 			spot.Start = min(max(0, spot.Start), max(0, innerWidth))
 			spot.End = min(max(0, spot.End), max(0, innerWidth))
-			if spot.End <= spot.Start { continue }
+			if spot.End <= spot.Start {
+				continue
+			}
 			spot.Line += offsetY
 			spot.Start += offsetX
 			spot.End += offsetX
