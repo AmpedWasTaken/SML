@@ -136,7 +136,7 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 	}
 	last := min(total, first+pageSize)
 	if total == 0 {
-		return []string{interpolate(n.Attr("empty", "No records available"), values)}, nil
+		return []string{trim(interpolate(n.Attr("empty", "No records available"), values), width)}, nil
 	}
 	rows = rows[first:last]
 	// Compute a bounded width including border and spacing glyphs. Every
@@ -245,7 +245,7 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 			output = append(output, border("└", "┴", "┘", "─"))
 		}
 	}
-	output = append(output, fmt.Sprintf("Page %d/%d · %d records", page, pages, total))
+	output = append(output, trim(fmt.Sprintf("Page %d/%d · %d records", page, pages, total), width))
 	return output, nil
 }
 func truncateCell(s string, w int) string {
