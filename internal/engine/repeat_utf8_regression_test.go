@@ -2,6 +2,8 @@ package engine
 
 import (
     "strings"
+    "os"
+    "path/filepath"
     "testing"
     "unicode/utf8"
 )
@@ -80,5 +82,23 @@ func TestNarrowPaddedPanelClipsHitboxInsteadOfBreakingFrame(t *testing.T) {
                 t.Fatalf("width %d frame has an overflowing line %q",width,line)
             }
         }
+    }
+}
+
+func TestRepeatedComponentControlIDsStayUnique(t *testing.T) {
+    dir:=t.TempDir()
+    if err:=os.MkdirAll(filepath.Join(dir,"components"),0700);err!=nil{t.Fatal(err)}
+    component:=`<component name="actions">
+        <button id="inspect" label="Inspect" page="home"/>
+    </component>`
+    if err:=os.WriteFile(filepath.Join(dir,"components","actions.sml"),[]byte(component),0600);err!=nil{t.Fatal(err)}
+    view,err:=Parse([]byte(`<screen name="home" version="3">
+        <include name="actions"/><include name="actions"/>
+    </screen>`))
+    if err!=nil{t.Fatal(err)}
+    frame,err:=view.WithAssets(dir).RenderFrame(nil,80)
+    if err!=nil{t.Fatalf("same component reused twice should render: %v",err)}
+    if len(frame.Hotspots)!=2 || frame.Hotspots[0].ID==frame.Hotspots[1].ID {
+        t.Fatalf("component control IDs were not scoped to include instances: %#v",frame.Hotspots)
     }
 }
