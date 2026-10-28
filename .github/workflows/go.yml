@@ -59,3 +59,8 @@ jobs:
           go run ./cmd/sml render -set app.health=online -set app.cpu=37 examples/quickstart.sml
           go run ./examples/host-actions
           go run ./examples/typed-monitor
+      - name: Typed binding and legacy render benchmarks
+        if: matrix.go == 'stable' && matrix.os == 'ubuntu-latest'
+        run: go test ./internal/engine -run '^
+ -bench 'Benchmark(BindingStateApply|TypedFrameRender|LegacyFrameRender)
+ -benchtime=300x -benchmem
