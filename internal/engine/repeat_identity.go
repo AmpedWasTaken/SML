@@ -15,6 +15,12 @@ var repeatIndexAlias = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 
 func validateRepeatSyntax(n Node) error {
 	if n.Kind != "repeat" {
+		if _, ok := n.Attrs["key-by"]; ok {
+			return errors.New("key-by is only valid on repeat")
+		}
+		if _, ok := n.Attrs["index-as"]; ok {
+			return errors.New("index-as is only valid on repeat")
+		}
 		return nil
 	}
 	_, keyed := n.Attrs["key-by"]
