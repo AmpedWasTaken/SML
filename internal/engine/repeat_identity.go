@@ -74,7 +74,7 @@ func repeatInstanceID(n Node, value string, index int, seen map[string]bool) (st
 		return "", errors.New("keyed repeat item needs a nonempty UTF-8 key of at most 128 bytes")
 	}
 	if seen[value] {
-		return "", fmt.Errorf("duplicate keyed repeat item %q", safe(value))
+		return "", errors.New("duplicate keyed repeat item")
 	}
 	seen[value] = true
 	digest := sha256.Sum256([]byte(value))
