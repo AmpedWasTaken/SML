@@ -1,0 +1,3 @@
+# Go formatting must not depend on checkout platform.
+# Windows Git checkout defaults to CRLF, while gofmt always emits LF.
+*.go text eol=lf
