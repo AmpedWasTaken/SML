@@ -59,7 +59,6 @@ func TestPublicFacadeHelpers(t *testing.T) {
 	}
 }
 
-
 func TestPublicFrameViewportAndHitTestCompatibility(t *testing.T) {
 	view, err := sml.Parse([]byte("<screen name=\"api\" version=\"3\"><text>Heading</text><button id=\"select\" label=\"Select\" action=\"app.select\"/></screen>"))
 	if err != nil {
