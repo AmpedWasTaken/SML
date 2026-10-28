@@ -28,6 +28,8 @@ type (
 	CellRun = engine.CellRun
 	// FrameDiff is a pure frame comparison result; hosts choose how to paint it.
 	FrameDiff = engine.FrameDiff
+	// BindingDependencies describes which host value changes may alter a view.
+	BindingDependencies = engine.BindingDependencies
 	// ValueKind identifies a typed host-supplied presentation scalar.
 	ValueKind = engine.ValueKind
 	// Value stores a bounded, inert typed presentation scalar.

@@ -336,23 +336,29 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		}
 		return out, nil
 	case "repeat":
-		key := n.Attr("source", "")
 		alias := n.Attr("as", "item")
 		if !validName.MatchString(alias) {
 			return nil, errors.New("invalid SML repeat alias")
 		}
-		items := strings.Split(values[key], ",")
-		if values[key] == "" {
-			return nil, nil
+		items, err := repeatItems(n, values[n.Attr("source", "")])
+		if err != nil {
+			return nil, err
 		}
-		limit := min(len(items), boundedInt(n.Attr("limit", "30"), 30, 0, 100))
 		out := []string{}
-		for i := 0; i < limit; i++ {
-			local := make(map[string]string, len(values)+1)
+		seen := make(map[string]bool)
+		for i, raw := range items {
+			item := strings.TrimSpace(raw)
+			if _, err := repeatInstanceID(n, item, i, seen); err != nil {
+				return nil, err
+			}
+			local := make(map[string]string, len(values)+2)
 			for k, val := range values {
 				local[k] = val
 			}
-			local[alias] = strings.TrimSpace(items[i])
+			local[alias] = item
+			if indexAlias := n.Attr("index-as", ""); indexAlias != "" {
+				local[indexAlias] = fmt.Sprintf("%d", i)
+			}
 			lines, err := v.lines(n.Children, local, width, depth+1)
 			if err != nil {
 				return nil, err
