@@ -76,7 +76,7 @@ func TestDiffFramesMetadataOnlyAndStyles(t *testing.T) {
 	before.Lines = []string{"\x1b[31mok\x1b[0m"}
 	after.Lines = []string{"\x1b[32mok\x1b[0m"}
 	diff, err = DiffFrames(before, after)
-	if err != nil || len(diff.Runs) != 1 || diff.Runs[0].Start != 0 || len(diff.Runs[0].Cells) != 5 {
+	if err != nil || !diff.FullRedraw || len(diff.Runs) != 1 || diff.Runs[0].Start != 0 || len(diff.Runs[0].Cells) != 5 {
 		t.Fatalf("style fallback %+v %v", diff, err)
 	}
 }
