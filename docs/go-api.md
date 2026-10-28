@@ -82,3 +82,7 @@ Window clips by terminal grapheme cells; translated hotspots are only active whe
 HitTest uses zero-based x/y, an exclusive right edge and last-hotspot precedence. Mouse coordinates from SSH clients must first be translated into the viewport's local frame.
 
 These helpers are post-render projection and metadata resolution, not a lazy DataGrid, event loop, permission system, or replacement for host-side scroll state. The full frame is still rendered first; use bounded provider/pagination data for large record sets.
+
+## Pure frame differences
+
+To update only changed cells, compare two `RenderFrame` snapshots with `sml.DiffFrames(before, after)`. The result exposes `FrameDiff.Runs` (copies of changed row-cell intervals), `FullRedraw` for resize/new baseline or unrepresented style changes, and separate `HotspotsChanged` / `ElementsChanged` flags. The host decides whether partial repainting is worthwhile and still owns all terminal I/O, focus and authorization. See [frame-diffs.md](frame-diffs.md) for the complete contract and benchmark command.
