@@ -11,11 +11,11 @@ func TestPublicFrameDiffMatchesVisibleCells(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	before, err := view.RenderFrame(map[string]string{"health":"ready"}, 40)
+	before, err := view.RenderFrame(map[string]string{"health": "ready"}, 40)
 	if err != nil {
 		t.Fatal(err)
 	}
-	after, err := view.RenderFrame(map[string]string{"health":"online"}, 40)
+	after, err := view.RenderFrame(map[string]string{"health": "online"}, 40)
 	if err != nil {
 		t.Fatal(err)
 	}
