@@ -133,7 +133,9 @@ func (v View) ResolveBindings(input map[string]string) map[string]string {
 func requiresSML3(nodes []Node) bool {
 	for _, n := range nodes {
 		_, hasGate := n.Attrs["enabled-when"]
-		if n.Kind == "derive" || n.Kind == "otherwise" || hasStyleAttributes(n) || hasGate || requiresSML3(n.Children) {
+		_, hasKeyBy := n.Attrs["key-by"]
+		_, hasIndex := n.Attrs["index-as"]
+		if n.Kind == "derive" || n.Kind == "otherwise" || hasStyleAttributes(n) || hasGate || hasKeyBy || hasIndex || requiresSML3(n.Children) {
 			return true
 		}
 	}
