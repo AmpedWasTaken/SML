@@ -75,3 +75,39 @@ A `<table>` supports a **bounded table-specific** `style` preset (`compact`, `co
 ## Interaction
 
 `button`, `link`, and `plugin-action` describe actions for the Go host to authorize and dispatch. `toggle`, `choice`, `input`, and `number` describe session-local state widgets. The engine doesn't run an input event loop, network handler or command runner. See [Go integration](go-api.md) and [Security](security.md).
+
+## Stable keyed repeats (SML v3, opt-in)
+
+By default, repeat instances keep their existing position-based control IDs. A
+dynamic list that can reorder may opt into value keys to preserve per-item
+hotspot IDs and focus metadata.
+
+```xml
+<screen name="inventory" version="3">
+  <repeat source="items" as="item" key-by="value" index-as="idx" limit="10">
+    <text>{{idx}}: {{item}}</text>
+    <button id="inspect" label="Inspect" action="inventory.inspect"/>
+  </repeat>
+</screen>
+```
+
+The host supplies `items` as a comma-separated list of **unique**, nonempty
+identifiers such as `server-1,server-2,server-3`. Each item is trimmed and its
+bounded UTF-8 value (at most 128 bytes) determines a non-executable, opaque,
+hash-derived path suffix. Reordering these identifiers retains each
+control's generated ID, and `index-as="idx"` exposes its current **zero-based**
+visible index to child bindings. Explicit child IDs such as `inspect` remain
+per-item scoped; a reorder cannot transfer the old row's ID to another item.
+
+Duplicate or missing keys fail rendering deterministically, rather than
+silently sharing a control state. Keyed source input is capped at 32 KiB and
+displays at most the existing 100-item limit. Only **visible items within the
+configured repeat limit** are checked for duplicates. Commas are separators
+and cannot be part of a key in this mode; a future typed data-provider
+interface can support more complex records.
+
+`index-as` must be a distinct safe local identifier and cannot shadow
+reserved presentation namespaces. Neither `key-by` nor `index-as` exists in
+SML v1/v2. Unkeyed repeats preserve their established positional IDs and
+rendering semantics. Both `RenderChecked` and `RenderFrame` validate keyed
+values consistently. No markup may execute code or authorize a host action.
