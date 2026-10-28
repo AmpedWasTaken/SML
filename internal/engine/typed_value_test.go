@@ -56,10 +56,10 @@ func TestTypedFramePreservesLegacyRenderingAndDeriveProtection(t *testing.T) {
 		t.Fatal(err)
 	}
 	typed := map[string]Value{
-		"service.status": StringValue("ready"),
+		"service.status":   StringValue("ready"),
 		"metrics.requests": IntValue(42),
-		"metrics.cpu": FloatValue(0.75),
-		"feature.enabled": BoolValue(true),
+		"metrics.cpu":      FloatValue(0.75),
+		"feature.enabled":  BoolValue(true),
 	}
 	before := copyBindingValues(typed)
 	frame, err := view.RenderTypedFrame(typed, 60)
