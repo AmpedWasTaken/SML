@@ -29,7 +29,7 @@ func TestBindingStateSnapshotsAreDetached(t *testing.T) {
 func TestBindingStateBatchIsAtomicAndIdempotent(t *testing.T) {
 	state, err := NewBindingState(map[string]Value{
 		"service.status": StringValue("idle"),
-		"service.count": IntValue(1),
+		"service.count":  IntValue(1),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -92,7 +92,7 @@ func TestBindingStateRejectsOversizedAtomicBatch(t *testing.T) {
 	updates := make([]BindingUpdate, 0, 40)
 	for i := 0; i < 40; i++ {
 		updates = append(updates, BindingUpdate{
-			Key: fmt.Sprintf("extra.%d", i),
+			Key:   fmt.Sprintf("extra.%d", i),
 			Value: StringValue(string(make([]byte, 4000))),
 		})
 	}
@@ -162,7 +162,7 @@ func TestBindingStateConcurrentWritersAndRenderSnapshots(t *testing.T) {
 func TestTypedStateRenderAndFrameDiff(t *testing.T) {
 	state, err := NewBindingState(map[string]Value{
 		"stats.requests": IntValue(8),
-		"stats.online": BoolValue(true),
+		"stats.online":   BoolValue(true),
 	})
 	if err != nil {
 		t.Fatal(err)
