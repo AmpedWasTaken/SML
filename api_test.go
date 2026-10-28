@@ -58,3 +58,32 @@ func TestPublicFacadeHelpers(t *testing.T) {
 		t.Fatal("unknown elements must still fail validation")
 	}
 }
+
+
+func TestPublicFrameViewportAndHitTestCompatibility(t *testing.T) {
+	view, err := sml.Parse([]byte("<screen name=\"api\" version=\"3\"><text>Heading</text><button id=\"select\" label=\"Select\" action=\"app.select\"/></screen>"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	frame, err := view.RenderFrame(nil, 40)
+	if err != nil {
+		t.Fatal(err)
+	}
+	window, err := frame.Window(0, 1, 20, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(window.Hotspots) != 1 || window.Hotspots[0].Line != 0 {
+		t.Fatalf("unexpected viewport metadata: %+v", window.Hotspots)
+	}
+	x := window.Hotspots[0].Start
+	spot, ok := window.HitTest(x, 0)
+	if !ok || spot.ID != "select" || spot.Action != "app.select" {
+		t.Fatalf("public Frame.HitTest was not preserved: %+v, %v", spot, ok)
+	}
+	if _, ok := window.HitTest(x, 1); ok {
+		t.Fatal("offscreen control was hittable")
+	}
+	var _ sml.Frame = window
+	var _ sml.Hotspot = spot
+}
