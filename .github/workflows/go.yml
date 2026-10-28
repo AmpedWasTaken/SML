@@ -40,6 +40,7 @@ jobs:
           if [ -n "$unformatted" ]; then
             echo "Unformatted Go files:"
             echo "$unformatted"
+            while IFS= read -r file; do gofmt -d "$file"; done <<< "$unformatted"
             exit 1
           fi
       - name: Download dependencies
