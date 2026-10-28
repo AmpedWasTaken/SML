@@ -90,3 +90,7 @@ To update only changed cells, compare two `RenderFrame` snapshots with `sml.Diff
 ## Conservative binding dependency metadata
 
 `view.BindingDependencies()` reports a bounded, sorted set of host keys used by the view, including transitive `derive` dependencies and controls hidden behind conditionals. Call `usage.AffectedBy(changedKeys...)` to determine whether a binding batch might require a rerender; unresolved components set `Conservative=true` and require refresh on any changed key. This only handles binding-driven changes: terminal resizing, focus/scroll movement, animations and other external events still require host-controlled redraws. See [binding invalidation](binding-invalidation.md).
+
+## Opt-in typed presentation state
+
+Go hosts can now supply bounded scalar `sml.Value` entries using `view.RenderTypedFrame(values, width)` without changing the existing string-map APIs. For concurrent host updates, `sml.NewBindingState(...)` provides atomic `Apply(...)` batches, revisioned `Snapshot()` copies, and sorted changed-key metadata. This does **not** add an expression engine or automatically skip layout work: rerender and use `sml.DiffFrames` until dependency-level invalidation is designed. See [typed bindings and state](typed-bindings.md) and the standalone [`examples/typed-monitor`](../examples/typed-monitor/main.go) for a working integration.

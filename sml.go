@@ -30,6 +30,18 @@ type (
 	FrameDiff = engine.FrameDiff
 	// BindingDependencies describes which host value changes may alter a view.
 	BindingDependencies = engine.BindingDependencies
+	// ValueKind identifies a typed host-supplied presentation scalar.
+	ValueKind = engine.ValueKind
+	// Value stores a bounded, inert typed presentation scalar.
+	Value = engine.Value
+	// BindingUpdate is one atomic host-side state operation.
+	BindingUpdate = engine.BindingUpdate
+	// BindingChange describes the committed revision and changed keys.
+	BindingChange = engine.BindingChange
+	// BindingSnapshot is a detached state snapshot.
+	BindingSnapshot = engine.BindingSnapshot
+	// BindingState serializes typed presentation updates and snapshots.
+	BindingState = engine.BindingState
 )
 
 // Parse checks SML markup and returns a view without executing it.
@@ -63,4 +75,29 @@ func WrapText(s string, width int) []string { return engine.WrapText(s, width) }
 // changed glyph runs. A new/different-size frame requests a full redraw.
 func DiffFrames(previous, current Frame) (FrameDiff, error) {
 	return engine.DiffFrames(previous, current)
+}
+
+const (
+	KindNull   ValueKind = engine.KindNull
+	KindString ValueKind = engine.KindString
+	KindInt    ValueKind = engine.KindInt
+	KindFloat  ValueKind = engine.KindFloat
+	KindBool   ValueKind = engine.KindBool
+)
+
+// Typed value constructors create inert presentation data, never expressions.
+func NullValue() Value           { return engine.NullValue() }
+func StringValue(s string) Value { return engine.StringValue(s) }
+func IntValue(n int64) Value     { return engine.IntValue(n) }
+func FloatValue(n float64) Value { return engine.FloatValue(n) }
+func BoolValue(b bool) Value     { return engine.BoolValue(b) }
+
+// NewBindingState creates a bounded state store with a detached initial map.
+func NewBindingState(initial map[string]Value) (*BindingState, error) {
+	return engine.NewBindingState(initial)
+}
+
+// ValidateBindingValues checks typed presentation values without changing them.
+func ValidateBindingValues(values map[string]Value) error {
+	return engine.ValidateBindingValues(values)
 }
