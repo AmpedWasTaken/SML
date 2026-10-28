@@ -32,16 +32,16 @@ type Value struct {
 	boolean bool
 }
 
-func NullValue() Value             { return Value{} }
-func StringValue(s string) Value   { return Value{kind: KindString, text: s} }
-func IntValue(n int64) Value       { return Value{kind: KindInt, integer: n} }
-func FloatValue(n float64) Value   { return Value{kind: KindFloat, number: n} }
-func BoolValue(b bool) Value       { return Value{kind: KindBool, boolean: b} }
-func (v Value) Kind() ValueKind    { return v.kind }
-func (v Value) Text() (string, bool) { return v.text, v.kind == KindString }
-func (v Value) Int64() (int64, bool) { return v.integer, v.kind == KindInt }
+func NullValue() Value                   { return Value{} }
+func StringValue(s string) Value         { return Value{kind: KindString, text: s} }
+func IntValue(n int64) Value             { return Value{kind: KindInt, integer: n} }
+func FloatValue(n float64) Value         { return Value{kind: KindFloat, number: n} }
+func BoolValue(b bool) Value             { return Value{kind: KindBool, boolean: b} }
+func (v Value) Kind() ValueKind          { return v.kind }
+func (v Value) Text() (string, bool)     { return v.text, v.kind == KindString }
+func (v Value) Int64() (int64, bool)     { return v.integer, v.kind == KindInt }
 func (v Value) Float64() (float64, bool) { return v.number, v.kind == KindFloat }
-func (v Value) Bool() (bool, bool) { return v.boolean, v.kind == KindBool }
+func (v Value) Bool() (bool, bool)       { return v.boolean, v.kind == KindBool }
 
 // String returns the deterministic plain-text representation used by the
 // existing string-map renderer. Untrusted escape sequences are filtered later
