@@ -57,3 +57,4 @@ jobs:
           go run ./cmd/sml validate examples/assets
           go run ./cmd/sml render -set app.health=online -set app.cpu=37 examples/quickstart.sml
           go run ./examples/host-actions
+          go run ./examples/typed-monitor
