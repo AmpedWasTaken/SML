@@ -62,3 +62,23 @@ For new applications, call `view.RenderFrame(bindings, width)`. Its `Frame` incl
 ## Host-owned actions
 
 Use `<button label="Refresh" id="refresh" action="app.refresh"/>` to emit an action ID without embedding application-specific commands into the library. The host checks the current user's permissions, maps `hotspot.Action` to an authorized handler, and performs any side effects. SML never dispatches the action.
+
+
+## Scroll-aware structural frames (new optional API)
+
+The Frame alias exposes two additional methods, without changing existing rendering or v1/v2/v3 SML syntax:
+
+    full, err := view.RenderFrame(bindings, 80)
+    if err != nil { return err }
+    viewport, err := full.Window(0, scrollY, 60, 20)
+    if err != nil { return err }
+    if spot, ok := viewport.HitTest(localMouseX, localMouseY); ok {
+        // Authenticate/authorize the action in the host before dispatch.
+        _ = spot.Action
+    }
+
+Window clips by terminal grapheme cells; translated hotspots are only active where their painted cells remain visible. The viewport contains its own Lines, Cells, Elements and Hotspots. Width is 1..240, height 1..3000, and scroll offsets must be nonnegative. Invisible right-edge fragments of wide characters are blank, never clickable.
+
+HitTest uses zero-based x/y, an exclusive right edge and last-hotspot precedence. Mouse coordinates from SSH clients must first be translated into the viewport's local frame.
+
+These helpers are post-render projection and metadata resolution, not a lazy DataGrid, event loop, permission system, or replacement for host-side scroll state. The full frame is still rendered first; use bounded provider/pagination data for large record sets.

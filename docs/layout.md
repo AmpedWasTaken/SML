@@ -45,3 +45,23 @@ separate runtime capabilities in the host application.
 ## Scope and future work
 
 `RenderFrame` is a **structural frame**, not a terminal input loop. Hosts still manage cursor movement, scrolling, key events, mouse support and authorization. The renderer currently targets up to 240 columns / 3,000 rows and does not implement arbitrary CSS flex properties, syntax-colored ANSI escape sequences inside bindings, bidirectional text layout, or clipping of complex multi-row controls. These remain separate engineering work.
+
+## Post-render viewports and cell-accurate hit testing
+
+Frame.Window(scrollX, scrollY, width, height) projects an existing structural frame into a fixed-size visible window in **display cells**. It returns a new frame and never mutates the source. Offscreen rows are blank-padded; clipped elements and hotspots are translated to viewport-relative coordinates. A wide emoji split by a window edge becomes blank cells rather than a broken leading character or an orphan continuation cell.
+
+    full, err := view.RenderFrame(values, 80)
+    if err != nil { return err }
+    visible, err := full.Window(0, scrollY, 60, 20)
+    if err != nil { return err }
+    // Draw visible.Lines at the host's chosen position.
+
+Frame.HitTest(x, y) returns (Hotspot, bool) using zero-based display cells with inclusive left and exclusive right bounds. The most recently layered visible hotspot takes precedence, with clipped/blank cells not interactive.
+
+    if spot, ok := visible.HitTest(mouseX, mouseY); ok {
+        // The host must independently authorize and dispatch spot.Action.
+    }
+
+Coordinates are relative to the *returned viewport*. A host drawing it at a screen offset must subtract the host's chrome/screen origin before hit-testing. Width must be 1..240, height 1..3000, and both scroll offsets nonnegative. A viewport outside the original frame returns blank rows.
+
+This is **not lazy virtual rendering**: RenderFrame still computes the whole bounded source frame, so large tables/logs must supply paged or windowed data from the host. SML does not own scrolling input, keyboard focus, terminal I/O or authorization. The API is additive and does not introduce SML 4 syntax.
