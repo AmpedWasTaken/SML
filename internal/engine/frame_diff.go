@@ -66,9 +66,12 @@ func computeFrameDiff(previous, current Frame) (FrameDiff, error) {
 		}
 		return out, nil
 	}
+	// Reuse the scratch mask across rows so one changed metric does not
+	// allocate for every otherwise-unchanged row in a dashboard.
+	dirty := make([]bool, current.Width)
 	for y, row := range current.Cells {
+		clear(dirty)
 		old := previous.Cells[y]
-		dirty := make([]bool, current.Width)
 		for x, cell := range row {
 			if cell.Grapheme != old[x].Grapheme || cell.Continuation != old[x].Continuation {
 				// Replacing half of a wide emoji can corrupt the neighbor.
