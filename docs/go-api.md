@@ -86,3 +86,7 @@ These helpers are post-render projection and metadata resolution, not a lazy Dat
 ## Pure frame differences
 
 To update only changed cells, compare two `RenderFrame` snapshots with `sml.DiffFrames(before, after)`. The result exposes `FrameDiff.Runs` (copies of changed row-cell intervals), `FullRedraw` for resize/new baseline or unrepresented style changes, and separate `HotspotsChanged` / `ElementsChanged` flags. The host decides whether partial repainting is worthwhile and still owns all terminal I/O, focus and authorization. See [frame-diffs.md](frame-diffs.md) for the complete contract and benchmark command.
+
+## Opt-in typed presentation state
+
+Go hosts can now supply bounded scalar `sml.Value` entries using `view.RenderTypedFrame(values, width)` without changing the existing string-map APIs. For concurrent host updates, `sml.NewBindingState(...)` provides atomic `Apply(...)` batches, revisioned `Snapshot()` copies, and sorted changed-key metadata. This does **not** add an expression engine or automatically skip layout work: rerender and use `sml.DiffFrames` until dependency-level invalidation is designed. See [typed bindings and state](typed-bindings.md) and the standalone [`examples/typed-monitor`](../examples/typed-monitor/main.go) for a working integration.
