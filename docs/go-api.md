@@ -86,3 +86,7 @@ These helpers are post-render projection and metadata resolution, not a lazy Dat
 ## Pure frame differences
 
 To update only changed cells, compare two `RenderFrame` snapshots with `sml.DiffFrames(before, after)`. The result exposes `FrameDiff.Runs` (copies of changed row-cell intervals), `FullRedraw` for resize/new baseline or unrepresented style changes, and separate `HotspotsChanged` / `ElementsChanged` flags. The host decides whether partial repainting is worthwhile and still owns all terminal I/O, focus and authorization. See [frame-diffs.md](frame-diffs.md) for the complete contract and benchmark command.
+
+## Conservative binding dependency metadata
+
+`view.BindingDependencies()` reports a bounded, sorted set of host keys used by the view, including transitive `derive` dependencies and controls hidden behind conditionals. Call `usage.AffectedBy(changedKeys...)` to determine whether a binding batch might require a rerender; unresolved components set `Conservative=true` and require refresh on any changed key. This only handles binding-driven changes: terminal resizing, focus/scroll movement, animations and other external events still require host-controlled redraws. See [binding invalidation](binding-invalidation.md).
