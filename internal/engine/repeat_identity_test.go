@@ -86,6 +86,8 @@ func TestKeyedRepeatV3SyntaxAndLegacyRendering(t *testing.T) {
 		`<screen name="bad" version="3"><repeat source="items" index-as="state"><text>{{item}}</text></repeat></screen>`,
 		`<screen name="bad" version="3"><repeat source="items" index-as="1bad"><text>{{item}}</text></repeat></screen>`,
 		`<screen name="bad" version="3"><repeat source="../evil" key-by="value"><text>x</text></repeat></screen>`,
+		`<screen name="bad" version="3"><column key-by="value"><text>x</text></column></screen>`,
+		`<screen name="bad" version="3"><text index-as="idx">x</text></screen>`,
 	} {
 		if _, err := Parse([]byte(sample)); err == nil {
 			t.Errorf("accepted invalid repeat syntax: %s", sample)
