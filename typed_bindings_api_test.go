@@ -13,7 +13,7 @@ func TestPublicTypedBindingsAndBatchUpdates(t *testing.T) {
 		t.Fatal(err)
 	}
 	store, err := sml.NewBindingState(map[string]sml.Value{
-		"host.name": sml.StringValue("server-one"),
+		"host.name":     sml.StringValue("server-one"),
 		"host.requests": sml.IntValue(5),
 	})
 	if err != nil {
