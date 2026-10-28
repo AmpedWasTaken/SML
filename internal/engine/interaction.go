@@ -176,6 +176,9 @@ func validateUIChildren(nodes []Node, screen, parent string) error {
 		if err := validateControl(node); err != nil {
 			return err
 		}
+		if err := validateRepeatSyntax(node); err != nil {
+			return err
+		}
 		if err := validateSessionControl(node); err != nil {
 			return err
 		}
