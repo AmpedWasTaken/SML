@@ -28,6 +28,8 @@ type (
 	CellRun = engine.CellRun
 	// FrameDiff is a pure frame comparison result; hosts choose how to paint it.
 	FrameDiff = engine.FrameDiff
+	// BindingDependencies describes which host value changes may alter a view.
+	BindingDependencies = engine.BindingDependencies
 )
 
 // Parse checks SML markup and returns a view without executing it.
