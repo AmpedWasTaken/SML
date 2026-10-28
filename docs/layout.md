@@ -46,7 +46,6 @@ separate runtime capabilities in the host application.
 
 `RenderFrame` is a **structural frame**, not a terminal input loop. Hosts still manage cursor movement, scrolling, key events, mouse support and authorization. The renderer currently targets up to 240 columns / 3,000 rows and does not implement arbitrary CSS flex properties, syntax-colored ANSI escape sequences inside bindings, bidirectional text layout, or clipping of complex multi-row controls. These remain separate engineering work.
 
-
 ## Post-render viewports and cell-accurate hit testing
 
 Frame.Window(scrollX, scrollY, width, height) projects an existing structural frame into a fixed-size visible window in **display cells**. It returns a new frame and never mutates the source. Offscreen rows are blank-padded; clipped elements and hotspots are translated to viewport-relative coordinates. A wide emoji split by a window edge becomes blank cells rather than a broken leading character or an orphan continuation cell.
