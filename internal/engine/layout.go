@@ -290,19 +290,26 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 			return result, err
 		}
 	case "repeat":
-		key := n.Attr("source", "")
-		if values[key] == "" {
-			return result, nil
+		items, err := repeatItems(n, values[n.Attr("source", "")])
+		if err != nil {
+			return layoutBlock{}, err
 		}
-		items := strings.Split(values[key], ",")
-		count := min(len(items), boundedInt(n.Attr("limit", "30"), 30, 0, 100))
-		for i := 0; i < count; i++ {
-			local := make(map[string]string, len(values)+1)
+		seen := make(map[string]bool)
+		for i, raw := range items {
+			item := strings.TrimSpace(raw)
+			identity, err := repeatInstanceID(n, item, i, seen)
+			if err != nil {
+				return layoutBlock{}, err
+			}
+			local := make(map[string]string, len(values)+2)
 			for k, val := range values {
 				local[k] = val
 			}
-			local[n.Attr("as", "item")] = strings.TrimSpace(items[i])
-			child, err := v.renderLayoutNodes(n.Children, local, width, depth, fmt.Sprintf("%s/repeat:%d", path, i))
+			local[n.Attr("as", "item")] = item
+			if indexAlias := n.Attr("index-as", ""); indexAlias != "" {
+				local[indexAlias] = fmt.Sprintf("%d", i)
+			}
+			child, err := v.renderLayoutNodes(n.Children, local, width, depth, path+"/"+identity)
 			if err != nil {
 				return result, err
 			}
