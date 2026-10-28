@@ -60,10 +60,7 @@ func computeFrameDiff(previous, current Frame) (FrameDiff, error) {
 		ElementsChanged: !reflect.DeepEqual(previous.Elements, current.Elements),
 	}
 	if err := validateDiffFrame(previous); err != nil || previous.Width != current.Width || previous.Height != current.Height {
-		out.FullRedraw = true
-		for y, row := range current.Cells {
-			out.Runs = append(out.Runs, CellRun{Row: y, Cells: append([]Cell(nil), row...)})
-		}
+		out.fullRedraw(current)
 		return out, nil
 	}
 	// Reuse the scratch mask across rows so one changed metric does not
@@ -83,10 +80,10 @@ func computeFrameDiff(previous, current Frame) (FrameDiff, error) {
 		if len(previous.Lines) != 0 && len(current.Lines) != 0 && previous.Lines[y] != current.Lines[y] &&
 			(previous.Lines[y] != cellLineText(old) || current.Lines[y] != cellLineText(row)) {
 			// A future styled frame may have invisible ANSI changes which
-			// are not yet represented in Cell. Fall back to the entire line.
-			for x := range dirty {
-				dirty[x] = true
-			}
+			// are not represented in Cell. Ask the host for a full repaint
+			// from current.Lines rather than silently dropping style changes.
+			out.fullRedraw(current)
+			return out, nil
 		}
 		for x := 0; x < current.Width; {
 			if !dirty[x] {
@@ -114,5 +111,13 @@ func markClusterDirty(dirty []bool, row []Cell, x int) {
 	}
 	for i := left; i < right; i++ {
 		dirty[i] = true
+	}
+}
+
+func (out *FrameDiff) fullRedraw(current Frame) {
+	out.FullRedraw = true
+	out.Runs = nil
+	for y, row := range current.Cells {
+		out.Runs = append(out.Runs, CellRun{Row: y, Cells: append([]Cell(nil), row...)})
 	}
 }
