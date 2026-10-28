@@ -24,6 +24,10 @@ type (
 	Frame = engine.Frame
 	// Hotspot describes an interactive control without executing actions.
 	Hotspot = engine.Hotspot
+	// CellRun is one changed row interval of a terminal-cell diff.
+	CellRun = engine.CellRun
+	// FrameDiff is a pure frame comparison result; hosts choose how to paint it.
+	FrameDiff = engine.FrameDiff
 )
 
 // Parse checks SML markup and returns a view without executing it.
@@ -51,3 +55,10 @@ func PadCells(s string, width int) string { return engine.PadCells(s, width) }
 
 // WrapText wraps text at grapheme boundaries and word boundaries.
 func WrapText(s string, width int) []string { return engine.WrapText(s, width) }
+
+// DiffFrames compares two structural frames without terminal I/O.
+// Changes to layout and interactive actions are reported independently from
+// changed glyph runs. A new/different-size frame requests a full redraw.
+func DiffFrames(previous, current Frame) (FrameDiff, error) {
+	return engine.DiffFrames(previous, current)
+}
