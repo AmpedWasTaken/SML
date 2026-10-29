@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("<screen name=\"s\"><column><column><column><column><column><column><column><column><column><column><column><column><column><column><column><column><column><text>deep</text></column></column></column></column></column></column></column></column></column></column></column></column></column></column></column></column></column></screen>")
