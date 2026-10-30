@@ -3,13 +3,14 @@ package engine
 import (
 	"fmt"
 	"strings"
+	"regexp"
 )
 
 // SML v3 styling is defined directly on visual elements. No CSS-like
 // declarations, external theme imports, or executable style expressions.
 var styleAttributes = map[string]bool{
 	"border": true, "padding": true, "align": true, "case": true,
-	"variant": true, "tone": true,
+	"variant": true, "tone": true, "glow": true, "glow-color": true, "accent": true,
 }
 var styleTargets = map[string]bool{
 	"text": true, "badge": true, "alert": true, "metric": true,
@@ -26,15 +27,58 @@ var inlineProps = map[string]map[string]bool{
 	"metric":        {"label": true, "value": true, "align": true, "case": true, "padding": true, "tone": true},
 	"field":         {"key": true, "label": true, "unit": true, "fallback": true, "align": true, "case": true, "padding": true, "tone": true},
 	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
-	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true},
+	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true},
 	"divider":       {"variant": true},
 	"button":        {"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 	"link":          {"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 	"plugin-action": {"label": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 }
 
+var glowColorPattern=regexp.MustCompile(`^#[0-9a-fA-F]{6}package engine
+
+import (
+	"fmt"
+	"strings"
+	"regexp"
+)
+
+// SML v3 styling is defined directly on visual elements. No CSS-like
+// declarations, external theme imports, or executable style expressions.
+var styleAttributes = map[string]bool{
+	"border": true, "padding": true, "align": true, "case": true,
+	"variant": true, "tone": true, "glow": true, "glow-color": true, "accent": true,
+}
+var styleTargets = map[string]bool{
+	"text": true, "badge": true, "alert": true, "metric": true,
+	"field": true, "section": true, "panel": true, "divider": true,
+	"button": true, "link": true, "plugin-action": true,
+}
+
+// Each visual element accepts only attributes used by its actual renderer.
+// Reject mistyped/unsupported properties rather than silently ignoring them.
+var inlineProps = map[string]map[string]bool{
+	"text":          {"value": true, "align": true, "case": true, "padding": true, "tone": true},
+	"badge":         {"value": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
+	"alert":         {"value": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
+	"metric":        {"label": true, "value": true, "align": true, "case": true, "padding": true, "tone": true},
+	"field":         {"key": true, "label": true, "unit": true, "fallback": true, "align": true, "case": true, "padding": true, "tone": true},
+	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
+	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true},
+	"divider":       {"variant": true},
+	"button":        {"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+	"link":          {"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+	"plugin-action": {"label": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+}
+
+)
+func validHexColor(v string)bool{return glowColorPattern.MatchString(v)}
+
 func validateStyleAttribute(key, value string) error {
 	switch key {
+	case "glow":
+		switch value {case "none","soft","medium","strong":return nil}
+	case "glow-color","accent":
+		if validHexColor(value) {return nil}
 	case "border":
 		switch value {
 		case "round", "single", "double", "heavy", "ascii", "none":
