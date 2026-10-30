@@ -25,28 +25,22 @@ func TestPanelAndTableNativeGlowPreserveCellsAndHotspots(t *testing.T){
 	plain:=append([]string(nil),frame.Lines...)
 	color,err:=PaintGlowFrame(frame,GlowOptions{TrueColor:true});if err!=nil{t.Fatal(err)}
 	if len(color)!=len(plain){t.Fatal("glow changed frame height")}
-	if strings.Join(color,"
-")==strings.Join(plain,"
-"){t.Fatal("glow painter did not apply colors")}
+	if strings.Join(color,"\n")==strings.Join(plain,"\n"){t.Fatal("glow painter did not apply colors")}
 	var hasColor bool
 	for i,line:=range color {
-		if strings.Contains(line,"[38;2;"){hasColor=true}
+		if strings.Contains(line,"\x1b[38;2;"){hasColor=true}
 		if got:=stripGlowSGR.ReplaceAllString(line,"");got!=plain[i]{
 			t.Fatalf("glow changed line %d geometry/content: %q != %q",i,got,plain[i])
 		}
-		if strings.Contains(line,"[2J")||strings.Contains(line,"[?25")||strings.Contains(line,"[H"){
+		if strings.Contains(line,"\x1b[2J")||strings.Contains(line,"\x1b[?25")||strings.Contains(line,"\x1b[H"){
 			t.Fatalf("glow emitted cursor or screen control: %q",line)
 		}
 	}
 	if !hasColor{t.Fatal("missing truecolor stroke")}
 	legacy,err:=PaintGlowFrame(frame,GlowOptions{TrueColor:true,NoColor:true});if err!=nil{t.Fatal(err)}
-	if strings.Join(legacy,"
-")!=strings.Join(plain,"
-"){t.Fatal("legacy mode emitted color")}
+	if strings.Join(legacy,"\n")!=strings.Join(plain,"\n"){t.Fatal("legacy mode emitted color")}
 	off,err:=PaintGlowFrame(frame,GlowOptions{});if err!=nil{t.Fatal(err)}
-	if strings.Join(off,"
-")!=strings.Join(plain,"
-"){t.Fatal("plain renderer changed")}
+	if strings.Join(off,"\n")!=strings.Join(plain,"\n"){t.Fatal("plain renderer changed")}
 }
 
 func TestGlowValidationAndNeutralDefaults(t *testing.T){
@@ -64,9 +58,7 @@ func TestGlowValidationAndNeutralDefaults(t *testing.T){
 	if err!=nil{t.Fatal(err)}
 	frame,err:=v.RenderFrame(nil,40);if err!=nil{t.Fatal(err)}
 	out,err:=PaintGlowFrame(frame,GlowOptions{TrueColor:true});if err!=nil{t.Fatal(err)}
-	if strings.Join(out,"
-")!=strings.Join(frame.Lines,"
-"){t.Fatal("unstyled view changed by opt-in painter")}
+	if strings.Join(out,"\n")!=strings.Join(frame.Lines,"\n"){t.Fatal("unstyled view changed by opt-in painter")}
 }
 
 func TestGlowDoesNotFillTablePadding(t *testing.T) {
@@ -80,11 +72,11 @@ func TestGlowDoesNotFillTablePadding(t *testing.T) {
 	lines,err:=PaintGlowFrame(frame,GlowOptions{TrueColor:true});if err!=nil{t.Fatal(err)}
 	var cells int
 	for i,line:=range lines {
-		if strings.Contains(line,"[48;2;"){cells++}
+		if strings.Contains(line,"\x1b[48;2;"){cells++}
 		if !strings.HasSuffix(stripGlowSGR.ReplaceAllString(line,""),frame.Lines[i]){
 			t.Errorf("colored line lost content: %q",line)
 		}
-		if strings.HasSuffix(line,"[48;2;"){t.Fatal("incomplete background escape")}
+		if strings.HasSuffix(line,"\x1b[48;2;"){t.Fatal("incomplete background escape")}
 	}
 	if cells!=1{t.Fatalf("only table header should receive subtle background, found %d lines",cells)}
 }
