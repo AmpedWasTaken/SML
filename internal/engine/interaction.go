@@ -257,6 +257,17 @@ func (v View) RenderInteractive(values map[string]string, width int) ([]string, 
 	return frame.Lines, frame.Hotspots, v.HasAnimation()
 }
 
+// RenderGlowInteractive keeps SML input/hotspot geometry identical to
+// RenderInteractive, but opt-in hosts may receive static, truecolor ANSI SGR
+// for native panel and table accents. No control actions or cursor movement.
+func (v View) RenderGlowInteractive(values map[string]string,width int,opts GlowOptions)([]string,[]Hotspot,bool){
+	frame,err:=v.RenderFrame(values,width)
+	if err!=nil{return []string{"SML render error: "+safe(err.Error())},nil,false}
+	painted,err:=PaintGlowFrame(frame,opts)
+	if err!=nil{return []string{"SML glow error: "+safe(err.Error())},nil,false}
+	return painted,frame.Hotspots,v.HasAnimation()
+}
+
 func (v View) HasAnimation() bool {
 	var visit func([]Node, int) bool
 	visit = func(nodes []Node, depth int) bool {
