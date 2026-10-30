@@ -1,3 +1,6 @@
 # Go formatting must not depend on checkout platform.
 # Windows Git checkout defaults to CRLF, while gofmt always emits LF.
 *.go text eol=lf
+
+# Go fuzz corpus files require exact LF headers on Windows.
+internal/engine/testdata/fuzz/** text eol=lf
