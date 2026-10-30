@@ -231,3 +231,5 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md), report bugs using [issue template
 ## License
 
 MIT © 2026 [AmpedWasTaken](https://github.com/AmpedWasTaken). See [LICENSE](LICENSE).
+
+<!-- One-time SML glow formatting verification trigger. -->
