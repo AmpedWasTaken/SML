@@ -26,7 +26,7 @@ func validateTable(n Node) error {
 	if n.Kind != "table" {
 		return nil
 	}
-	allowed := map[string]bool{"source": true, "style": true, "page": true, "page-size": true, "sort": true, "order": true, "filter": true, "empty": true}
+	allowed := map[string]bool{"source": true, "style": true, "page": true, "page-size": true, "sort": true, "order": true, "filter": true, "empty": true, "glow": true, "glow-color": true, "accent": true, "header-style": true, "row-style": true}
 	for k := range n.Attrs {
 		if !allowed[k] {
 			return fmt.Errorf("unknown table attribute %q", k)
@@ -35,6 +35,20 @@ func validateTable(n Node) error {
 	if !tableStyles[n.Attr("style", "compact-lite")] {
 		return errors.New("unknown table style")
 	}
+	for _,key:=range []string{"glow","glow-color","accent"} {
+		if value:=n.Attr(key,"");value!="" {
+			if err:=validateStyleAttribute(key,value);err!=nil{return err}
+		}
+	}
+	switch n.Attr("header-style","default") {
+	case "default","accent","muted","solid":
+	default:return errors.New("table header-style must be default, accent, muted or solid")
+	}
+	switch n.Attr("row-style","plain") {
+	case "plain","striped","compact":
+	default:return errors.New("table row-style must be plain, striped or compact")
+	}
+
 	if n.Attr("source", "") == "" {
 		return errors.New("table requires a source binding")
 	}
