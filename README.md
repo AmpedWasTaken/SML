@@ -194,6 +194,7 @@ For commonly used commands, run `make check` (when Make is available). The CLI r
 | [Roadmap](docs/roadmap.md) | Proposed improvements and contribution priorities |
 | [Releasing](docs/releasing.md) | Versioning, compatibility, release checklist |
 | [Security](docs/security.md) | Resource limits, action trust boundaries and safe embedding |
+| [Fuzzing](docs/fuzzing.md) | Parser fuzz target, committed seeds, reproducing and reporting findings |
 | [Migrating from Sentinel V5](docs/migration.md) | Package imports and host responsibilities |
 | [Contributing](CONTRIBUTING.md) | Local tooling, tests and PRs |
 

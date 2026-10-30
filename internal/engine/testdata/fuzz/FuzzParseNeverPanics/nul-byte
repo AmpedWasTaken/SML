@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("<screen name=\"a\"><text>\x00</text></screen>")
