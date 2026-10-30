@@ -26,11 +26,11 @@ type Element struct {
 	Bounds Rect
 	// Presentation-only SML metadata. The base frame stays plain text;
 	// clients opt into ANSI colors through PaintGlowFrame.
-	Glow string
-	GlowColor string
-	Accent string
+	Glow        string
+	GlowColor   string
+	Accent      string
 	HeaderStyle string
-	RowStyle string
+	RowStyle    string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -148,9 +148,9 @@ func (out *layoutBlock) mark(n Node, id string, width int) {
 		actual = width
 	}
 	out.elements = append(out.elements, Element{
-		ID:id, Kind:n.Kind, Bounds:Rect{Width:min(actual,width),Height:len(out.lines)},
-		Glow:n.Attr("glow","none"), GlowColor:n.Attr("glow-color",""),
-		Accent:n.Attr("accent",""), HeaderStyle:n.Attr("header-style","default"),RowStyle:n.Attr("row-style","plain"),
+		ID: id, Kind: n.Kind, Bounds: Rect{Width: min(actual, width), Height: len(out.lines)},
+		Glow: n.Attr("glow", "none"), GlowColor: n.Attr("glow-color", ""),
+		Accent: n.Attr("accent", ""), HeaderStyle: n.Attr("header-style", "default"), RowStyle: n.Attr("row-style", "plain"),
 	})
 }
 func controlNode(n Node) bool {

@@ -49,8 +49,8 @@ type (
 // PaintGlowFrame styles panel/table borders and headers using only ANSI SGR.
 // It never moves the cursor and preserves all frame cell/hotspot geometry.
 // Use GlowOptions{TrueColor:true} on capable SSH clients; the default is plain.
-func PaintGlowFrame(frame Frame,options GlowOptions)([]string,error){
-	return engine.PaintGlowFrame(frame,options)
+func PaintGlowFrame(frame Frame, options GlowOptions) ([]string, error) {
+	return engine.PaintGlowFrame(frame, options)
 }
 
 // Parse checks SML markup and returns a view without executing it.

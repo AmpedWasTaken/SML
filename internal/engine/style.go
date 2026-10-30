@@ -2,8 +2,8 @@ package engine
 
 import (
 	"fmt"
-	"strings"
 	"regexp"
+	"strings"
 )
 
 // SML v3 styling is defined directly on visual elements. No CSS-like
@@ -35,14 +35,20 @@ var inlineProps = map[string]map[string]bool{
 }
 
 var glowColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
-func validHexColor(v string)bool{return glowColorPattern.MatchString(v)}
+
+func validHexColor(v string) bool { return glowColorPattern.MatchString(v) }
 
 func validateStyleAttribute(key, value string) error {
 	switch key {
 	case "glow":
-		switch value {case "none","soft","medium","strong":return nil}
-	case "glow-color","accent":
-		if validHexColor(value) {return nil}
+		switch value {
+		case "none", "soft", "medium", "strong":
+			return nil
+		}
+	case "glow-color", "accent":
+		if validHexColor(value) {
+			return nil
+		}
 	case "border":
 		switch value {
 		case "round", "single", "double", "heavy", "ascii", "none":

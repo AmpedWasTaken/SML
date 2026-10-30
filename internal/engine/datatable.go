@@ -35,18 +35,22 @@ func validateTable(n Node) error {
 	if !tableStyles[n.Attr("style", "compact-lite")] {
 		return errors.New("unknown table style")
 	}
-	for _,key:=range []string{"glow","glow-color","accent"} {
-		if value:=n.Attr(key,"");value!="" {
-			if err:=validateStyleAttribute(key,value);err!=nil{return err}
+	for _, key := range []string{"glow", "glow-color", "accent"} {
+		if value := n.Attr(key, ""); value != "" {
+			if err := validateStyleAttribute(key, value); err != nil {
+				return err
+			}
 		}
 	}
-	switch n.Attr("header-style","default") {
-	case "default","accent","muted","solid":
-	default:return errors.New("table header-style must be default, accent, muted or solid")
+	switch n.Attr("header-style", "default") {
+	case "default", "accent", "muted", "solid":
+	default:
+		return errors.New("table header-style must be default, accent, muted or solid")
 	}
-	switch n.Attr("row-style","plain") {
-	case "plain","striped","compact":
-	default:return errors.New("table row-style must be plain, striped or compact")
+	switch n.Attr("row-style", "plain") {
+	case "plain", "striped", "compact":
+	default:
+		return errors.New("table row-style must be plain, striped or compact")
 	}
 
 	if n.Attr("source", "") == "" {
