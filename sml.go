@@ -28,6 +28,8 @@ type (
 	CellRun = engine.CellRun
 	// FrameDiff is a pure frame comparison result; hosts choose how to paint it.
 	FrameDiff = engine.FrameDiff
+	// GlowOptions enables optional truecolor panel/table effects.
+	GlowOptions = engine.GlowOptions
 	// BindingDependencies describes which host value changes may alter a view.
 	BindingDependencies = engine.BindingDependencies
 	// ValueKind identifies a typed host-supplied presentation scalar.
@@ -43,6 +45,13 @@ type (
 	// BindingState serializes typed presentation updates and snapshots.
 	BindingState = engine.BindingState
 )
+
+// PaintGlowFrame styles panel/table borders and headers using only ANSI SGR.
+// It never moves the cursor and preserves all frame cell/hotspot geometry.
+// Use GlowOptions{TrueColor:true} on capable SSH clients; the default is plain.
+func PaintGlowFrame(frame Frame,options GlowOptions)([]string,error){
+	return engine.PaintGlowFrame(frame,options)
+}
 
 // Parse checks SML markup and returns a view without executing it.
 func Parse(data []byte) (View, error) { return engine.Parse(data) }
