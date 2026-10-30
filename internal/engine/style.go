@@ -14,7 +14,7 @@ var styleAttributes = map[string]bool{
 }
 var styleTargets = map[string]bool{
 	"text": true, "badge": true, "alert": true, "metric": true,
-	"field": true, "section": true, "panel": true, "divider": true,
+	"field": true, "section": true, "panel": true, "table": true, "divider": true,
 	"button": true, "link": true, "plugin-action": true,
 }
 
