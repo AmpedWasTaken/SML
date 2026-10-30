@@ -65,7 +65,11 @@ func PaintGlowFrame(frame Frame, opts GlowOptions)([]string,error){
 	inks:=make([][]glowInk,frame.Height)
 	for y:=range inks{inks[y]=make([]glowInk,frame.Width)}
 	styled:=false
-	for _,element:=range frame.Elements{
+	// Nested frame elements are recorded child-first. Paint parents first
+	// so each nested table keeps its own accent instead of inheriting and
+	// overwriting all its borders with the outer panel's glow color.
+	for i:=len(frame.Elements)-1;i>=0;i-- {
+		element:=frame.Elements[i]
 		if element.Kind!="panel"&&element.Kind!="table"{continue}
 		if element.Glow=="none"&&element.Accent==""&&element.HeaderStyle=="default"&&element.RowStyle=="plain"{continue}
 		x0,y0,x1,y1,ok:=glowBounds(frame,element)
