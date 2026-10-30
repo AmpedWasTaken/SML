@@ -2,7 +2,23 @@
 
 # SML
 
-### Beautiful terminal UIs, written in markup.
+### Optional native glow for panels and tables
+
+SML v3 supports `glow="none|soft|medium|strong"`, `glow-color="#RRGGBB"`,
+and `accent="#RRGGBB"` on existing `<panel>` and `<table>` elements.
+Tables also support `header-style="accent|solid|muted|default"` and
+`row-style="plain|striped|compact"`.
+
+The default rendering stays plain and fully compatible with legacy SSH.
+Hosts explicitly opt into static ANSI truecolor using
+`sml.PaintGlowFrame(frame, sml.GlowOptions{TrueColor:true})` or
+`view.RenderGlowInteractive(...)`. Colors affect only existing glyphs,
+never add cells, blink cursors, or repaint empty rows.
+
+See [component reference](docs/components.md) and
+[glow example](examples/glow-panels.sml).
+
+## Beautiful terminal UIs, written in markup.
 
 **A declarative, lightweight TUI view engine for Go.**  
 Compose terminal screens with familiar XML-like elements, supply live data from Go, and keep presentation separate from your application logic.
