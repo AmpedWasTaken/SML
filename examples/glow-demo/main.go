@@ -20,5 +20,5 @@ func main(){
 	rows,err:=sml.PaintGlowFrame(frame,sml.GlowOptions{TrueColor:true})
 	if err!=nil{panic(err)}
 	for _,row:=range rows {fmt.Println(row)}
-	fmt.Print("[0m")
+	fmt.Print("\x1b[0m")
 }
