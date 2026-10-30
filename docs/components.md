@@ -99,6 +99,61 @@ positions after wrapping. Invalid weight vectors fail parsing, not rendering.
 
 Validate the whole asset root with `sml.LoadDir("assets")` or the CLI `sml validate assets/`.
 
+## Native panel and table glow (SML v3)
+
+The existing \`<panel>\` and bounded \`<table>\` accept **opt-in** presentation
+attributes. No extra row/column components, arbitrary ANSI or CSS are needed.
+
+\`\`\`xml
+<screen name="plugins" version="3">
+  <panel title="Installed plugins" border="round" padding="1"
+         glow="soft" glow-color="#72D6EA" accent="#A590F1">
+    <table source="plugin.rows" style="rounded" glow="medium"
+           glow-color="#72D6EA" header-style="accent" row-style="striped">
+      <column key="name" label="PLUGIN" width="18"/>
+      <column key="state" label="STATE" width="12"/>
+      <column key="runtime" label="RUNTIME" width="16"/>
+    </table>
+  </panel>
+</screen>
+\`\`\`
+
+The existing \`table source=\` is a JSON **string binding** (up to 200 rows);
+the new styles do not execute code and do not relax table or action limits.
+
+| Component | New options |
+| --- | --- |
+| \`panel\` | \`glow="none|soft|medium|strong"\`, \`glow-color="#RRGGBB"\`, \`accent="#RRGGBB"\` |
+| \`table\` | Same glow/hex options, \`header-style="default|accent|muted|solid"\`, \`row-style="plain|striped|compact"\` |
+
+Glow is an approximation using ANSI foreground color on existing border
+strokes, a brighter top edge, and a *small* tint only behind nonspace table
+header/striped-row characters. **No blur, overdraw, artificial halo columns,
+cursor movement, background jobs, or blinking**. This keeps fixed-width
+geometry, focus targets, and animated TUI input safe.
+
+The plain \`RenderFrame\`, \`RenderWidth\` and \`RenderInteractive\` APIs remain
+colorless and backward-compatible. A color-capable Go host explicitly opts
+into styling:
+
+\`\`\`go
+frame, err := view.RenderFrame(bindings, 80)
+if err != nil { return err }
+rows, err := sml.PaintGlowFrame(frame, sml.GlowOptions{TrueColor: true})
+if err != nil { return err }
+// rows contain ANSI SGR color only: host owns terminal write/diff/cursor.
+\`\`\`
+
+Or call \`view.RenderGlowInteractive(bindings, width, opts)\` for styled rows
+with the original hotspot metadata. The host must preserve validated SGR in
+its final paint path; sending rows through a sanitizer that discards ANSI
+will intentionally remove the effect.
+
+On older SSH/PuTTY clients, pass \`GlowOptions{NoColor: true}\` or omit
+\`TrueColor\` to get the original geometry and text exactly. Glyph/font
+fallback remains the terminal host's responsibility. Color attributes are
+validated as full six-digit hexadecimal values and cannot inject escapes.
+
 ## Input and interactive metadata
 
 ```xml
