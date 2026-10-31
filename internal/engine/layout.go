@@ -473,7 +473,7 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 				}
 				result.spots = append(result.spots, Hotspot{
 					ID: id, Action: generic, Line: 0, Start: lead, End: right,
-					Label: n.Attr("label", ""), Page: n.Attr("page", ""), Command: n.Attr("command", ""),
+					Label: controlDisplayLabel(n, values), Page: n.Attr("page", ""), Command: n.Attr("command", ""),
 					Kind: n.Kind, Key: n.Attr("key", ""), Options: controlOptions(n),
 					PluginID: n.Attr("plugin", ""), PluginAction: n.Attr("action", ""),
 					Arg: n.Attr("arg", ""), Source: n.Attr("source", ""), Bindings: n.Attr("bindings", ""),
