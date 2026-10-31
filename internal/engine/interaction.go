@@ -34,6 +34,8 @@ var bindingName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]{0,95}$`)
 var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
 var uiLabel = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _./:+-]{0,46}$`)
+// Only host-owned i18n.* values may replace interactive display text.
+var localizedControlKey = regexp.MustCompile(`^i18n\.[A-Za-z_][A-Za-z0-9_.]{0,89}$`)
 var actionID = regexp.MustCompile("^[a-z][a-z0-9_.-]{0,63}$")
 
 // button is a read-only command or page navigation. A future extension API
@@ -45,9 +47,9 @@ func validateControl(n Node) error {
 	if len(n.Children) != 0 || strings.TrimSpace(n.Text) != "" {
 		return errors.New("interactive SML elements must be empty")
 	}
-	allowed := map[string]bool{"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
+	allowed := map[string]bool{"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
 	if n.Kind == "plugin-action" {
-		allowed = map[string]bool{"label": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "style": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
+		allowed = map[string]bool{"label": true, "label-key": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "style": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
 		if !validName.MatchString(n.Attr("plugin", "")) || !validName.MatchString(n.Attr("action", "")) {
 			return errors.New("invalid SML plugin action identity")
 		}
@@ -78,6 +80,9 @@ func validateControl(n Node) error {
 	}
 	if !uiLabel.MatchString(n.Attr("label", "")) {
 		return errors.New("invalid control label (ASCII only, max 47 chars)")
+	}
+	if key := n.Attr("label-key", ""); key != "" && !localizedControlKey.MatchString(key) {
+		return errors.New("interactive label-key must reference host-owned i18n.* binding")
 	}
 	page := n.Attr("page", "")
 	command := n.Attr("command", "")
@@ -120,8 +125,27 @@ func controlEnabled(n Node, values map[string]string) bool {
 	return value != "" && value != "0" && value != "false" && value != "off" && value != "no"
 }
 
-func renderActionControl(n Node, values map[string]string, width int) string {
+// controlDisplayLabel uses identical cell-aware text for rendering and for
+// hotspot metadata. Page, command, plugin and action identifiers never change.
+func controlDisplayLabel(n Node, values map[string]string) string {
 	label := n.Attr("label", "")
+	key := n.Attr("label-key", "")
+	if key == "" || !localizedControlKey.MatchString(key) {
+		return label
+	}
+	translated := strings.TrimSpace(safe(strings.NewReplacer("\n", " ", "\r", " ", "\t", " ").Replace(values[key])))
+	if translated == "" {
+		return label
+	}
+	translated = ClipCells(translated, 47)
+	if translated == "" {
+		return label
+	}
+	return translated
+}
+
+func renderActionControl(n Node, values map[string]string, width int) string {
+	label := controlDisplayLabel(n, values)
 	if !controlEnabled(n, values) {
 		label += " (disabled)"
 	}
