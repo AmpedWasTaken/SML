@@ -1,3 +1,29 @@
+## Localized interactive labels
+
+Buttons, links and plugin actions can optionally select a host-owned
+localization binding without changing their immutable command, page,
+action or permission identifiers:
+
+```xml
+<screen name="controls" version="3">
+  <button label="HOME" label-key="i18n.actions.home" page="home"/>
+  <link label="HELP" label-key="i18n.actions.help" command="help"/>
+</screen>
+```
+
+`label` remains mandatory, ASCII-only and serves as the English fallback.
+`label-key` must be a valid `i18n.*` name: arbitrary user, state or plugin
+bindings are rejected. The host passes localized display strings in the
+`RenderFrame` bindings map. The same display label is used for both the
+visual control and its returned hotspot, whose offsets are measured in
+Unicode terminal cells (Chinese characters generally occupy two cells).
+Long labels are clipped to at most 47 display cells; newlines, tabs and
+terminal control sequences cannot alter layout geometry.
+
+Localization changes **presentation only**: validated `page`, `command`,
+`action`, plugin identifiers and host authorization remain unchanged.
+If the key is absent or empty, the original ASCII label renders.
+
 # Component reference
 
 This is a concise reference to the currently supported XML-like SML elements. Each file begins with a named `<screen>`; `version="3"` enables derived data and v3 control gating.
