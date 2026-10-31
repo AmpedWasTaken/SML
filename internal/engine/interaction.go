@@ -202,7 +202,7 @@ func controlDisplayLabel(n Node, values map[string]string) string {
  label := n.Attr("label", "")
  key := n.Attr("label-key", "")
  if key == "" || !localizedControlKey.MatchString(key) { return label }
- translated := strings.TrimSpace(safe(values[key]))
+ translated := strings.TrimSpace(safe(strings.NewReplacer("\\n", " ", "\\r", " ", "\\t", " ").Replace(values[key])))
  if translated == "" { return label }
  // Prevent pathological untrusted values from consuming whole lines.
  translated = ClipCells(translated, 47)
