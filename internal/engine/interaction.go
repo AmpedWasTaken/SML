@@ -33,7 +33,80 @@ type Hotspot struct {
 var bindingName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]{0,95}$`)
 var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
-var uiLabel = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _./:+-]{0,46}$`)
+var uiLabel = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _./:+-]{0,46}package engine
+
+import (
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+)
+
+// Hotspot uses logical terminal cell offsets in the rendered SML content.
+// The TUI translates these into coordinates after borders and scrolling.
+type Hotspot struct {
+	Line         int
+	Start        int // inclusive, 0-based
+	End          int // exclusive
+	Label        string
+	Page         string
+	Command      string
+	Kind         string
+	Key          string
+	Options      []string
+	PluginID     string
+	PluginAction string
+	Action       string // Generic host action; never executed by SML.
+	ID           string // Explicit control ID or generated layout path.
+	Arg          string
+	Source       string
+	Bindings     string
+	Min          int
+	Max          int
+}
+
+var bindingName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]{0,95}$`)
+var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
+var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
+)
+// Control display labels may read ONLY trusted host-provided i18n.* bindings.
+// The canonical ASCII label is preserved as a safe English fallback.
+var localizedControlKey = regexp.MustCompile(`^i18n\.[A-Za-z_][A-Za-z0-9_.]{0,89}package engine
+
+import (
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+)
+
+// Hotspot uses logical terminal cell offsets in the rendered SML content.
+// The TUI translates these into coordinates after borders and scrolling.
+type Hotspot struct {
+	Line         int
+	Start        int // inclusive, 0-based
+	End          int // exclusive
+	Label        string
+	Page         string
+	Command      string
+	Kind         string
+	Key          string
+	Options      []string
+	PluginID     string
+	PluginAction string
+	Action       string // Generic host action; never executed by SML.
+	ID           string // Explicit control ID or generated layout path.
+	Arg          string
+	Source       string
+	Bindings     string
+	Min          int
+	Max          int
+}
+
+var bindingName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]{0,95}$`)
+var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
+var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
+)
 var actionID = regexp.MustCompile("^[a-z][a-z0-9_.-]{0,63}$")
 
 // button is a read-only command or page navigation. A future extension API
@@ -45,9 +118,9 @@ func validateControl(n Node) error {
 	if len(n.Children) != 0 || strings.TrimSpace(n.Text) != "" {
 		return errors.New("interactive SML elements must be empty")
 	}
-	allowed := map[string]bool{"label": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
+	allowed := map[string]bool{"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
 	if n.Kind == "plugin-action" {
-		allowed = map[string]bool{"label": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "style": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
+		allowed = map[string]bool{"label": true, "label-key": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "style": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
 		if !validName.MatchString(n.Attr("plugin", "")) || !validName.MatchString(n.Attr("action", "")) {
 			return errors.New("invalid SML plugin action identity")
 		}
@@ -78,6 +151,9 @@ func validateControl(n Node) error {
 	}
 	if !uiLabel.MatchString(n.Attr("label", "")) {
 		return errors.New("invalid control label (ASCII only, max 47 chars)")
+	}
+	if key := n.Attr("label-key", ""); key != "" && !localizedControlKey.MatchString(key) {
+		return errors.New("interactive label-key must reference a host-owned i18n.* binding")
 	}
 	page := n.Attr("page", "")
 	command := n.Attr("command", "")
@@ -120,8 +196,22 @@ func controlEnabled(n Node, values map[string]string) bool {
 	return value != "" && value != "0" && value != "false" && value != "off" && value != "no"
 }
 
+// controlDisplayLabel uses the exact same cell-aware text in the glyph
+// renderer and in hotspot metadata. Never translate command/page/action IDs.
+func controlDisplayLabel(n Node, values map[string]string) string {
+ label := n.Attr("label", "")
+ key := n.Attr("label-key", "")
+ if key == "" || !localizedControlKey.MatchString(key) { return label }
+ translated := strings.TrimSpace(safe(values[key]))
+ if translated == "" { return label }
+ // Prevent pathological untrusted values from consuming whole lines.
+ translated = ClipCells(translated, 47)
+ if translated == "" { return label }
+ return translated
+}
+
 func renderActionControl(n Node, values map[string]string, width int) string {
-	label := n.Attr("label", "")
+ label := controlDisplayLabel(n, values)
 	if !controlEnabled(n, values) {
 		label += " (disabled)"
 	}
