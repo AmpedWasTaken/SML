@@ -20,6 +20,8 @@ var allowed = map[string]bool{
 	"if": true, "when": true, "repeat": true, "table": true, "prompt": true, "alert": true,
 	"gradient": true, "button": true, "link": true, "image": true, "gif": true,
 	"gauge": true, "sparkline": true, "plugin-action": true,
+	"heatmap": true, "bar-chart": true, "stacked-bar": true,
+	"waveform": true, "kpi": true, "activity-feed": true,
 	"toggle": true, "choice": true, "input": true, "number": true,
 	"section": true, "field": true, "empty": true, "derive": true, "otherwise": true,
 	"use": true, "slot": true, "fill": true,
