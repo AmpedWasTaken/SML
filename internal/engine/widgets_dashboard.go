@@ -64,10 +64,13 @@ func validateDashboardWidget(n Node) error {
 	return nil
 }
 
-func widgetText(s string, values map[string]string, width int) string {
-	t := interpolate(s, values)
-	t = strings.NewReplacer("\n", " ", "\t", " ", "\r", " ").Replace(t)
+func widgetLiteral(s string, width int) string {
+	t := strings.NewReplacer("\n", " ", "\t", " ", "\r", " ").Replace(safe(s))
 	return trim(strings.TrimSpace(t), max(0, width))
+}
+
+func widgetText(s string, values map[string]string, width int) string {
+	return widgetLiteral(interpolate(s, values), width)
 }
 
 // parseWidgetNumbers ignores invalid/non-finite values and caps both the token
@@ -152,7 +155,7 @@ func renderBarChart(n Node, values map[string]string, width int) []string {
 	for i, sample := range samples {
 		name := fmt.Sprintf("%d", i+1)
 		if i < len(labels) && strings.TrimSpace(labels[i]) != "" {
-			name = widgetText(labels[i], values, labelWidth)
+			name = widgetLiteral(labels[i], labelWidth)
 		}
 		ratio := 0.0
 		if top > 0 {
@@ -197,7 +200,7 @@ func renderStackedBar(n Node, values map[string]string, width int) []string {
 	for i, sample := range samples {
 		name := fmt.Sprintf("GROUP %d", i+1)
 		if i < len(labels) && strings.TrimSpace(labels[i]) != "" {
-			name = widgetText(labels[i], values, 30)
+			name = widgetLiteral(labels[i], 30)
 		}
 		out = append(out, trim(fmt.Sprintf("%s %s  %.1f%%", styles[i%len(styles)], name, 100*sample/total), width))
 	}
@@ -279,9 +282,9 @@ func renderActivityFeed(n Node, values map[string]string, width int) []string {
 		if len(parts) != 3 {
 			continue
 		}
-		stamp := widgetText(parts[0], values, 12)
+		stamp := widgetLiteral(parts[0], 12)
 		state := strings.ToLower(strings.TrimSpace(parts[1]))
-		message := widgetText(parts[2], values, width)
+		message := widgetLiteral(parts[2], width)
 		if message == "" {
 			continue
 		}
