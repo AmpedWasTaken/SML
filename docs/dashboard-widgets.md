@@ -39,3 +39,5 @@ Check behavior in 20, 40, 80 and 120 terminal columns. Test on an actual PuTTY s
 ## Live preview in Sentinel
 
 A first-party, read-only SML Showcase is being added in the Sentinel core. It documents the currently pinned engine and labels these six new elements as requiring an engine module update. Once the new SML release is adopted, the showcase can render these widgets directly using the same bounded host fixtures.
+
+The Go CI suite includes parser and frame safety tests for each new widget. Terminals with limited Unicode glyph support should use the host's configured fallback layout rather than accepting raw escape sequences from widget data.
