@@ -41,7 +41,7 @@ func validateDashboardWidget(n Node) error {
 		return errors.New("kpi unit too long")
 	}
 	for _, rule := range []struct {
-		name string
+		name          string
 		def, min, max int
 	}{
 		{"columns", 12, 2, 48},
@@ -230,7 +230,7 @@ func renderWaveform(n Node, values map[string]string, width int) []string {
 		for _, v := range samples {
 			level := height / 2
 			if hi > lo {
-				level = int(math.Round((v - lo) * float64(height-1) / (hi - lo))) + 1
+				level = int(math.Round((v-lo)*float64(height-1)/(hi-lo))) + 1
 			}
 			if level >= row {
 				b.WriteRune('█')
