@@ -9,6 +9,9 @@ import (
 )
 
 func validateWidget(n Node) error {
+	if err := validateDashboardWidget(n); err != nil {
+		return err
+	}
 	switch n.Kind {
 	case "gauge":
 		allowed := map[string]bool{"label": true, "value": true, "width": true}
