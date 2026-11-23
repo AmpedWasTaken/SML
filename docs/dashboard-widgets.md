@@ -35,3 +35,7 @@ go vet ./...
 ```
 
 Check behavior in 20, 40, 80 and 120 terminal columns. Test on an actual PuTTY session for optional Unicode glyph fallback; the SSH host controls terminal profile and replaces incompatible glyphs where necessary.
+
+## Live preview in Sentinel
+
+A first-party, read-only SML Showcase is being added in the Sentinel core. It documents the currently pinned engine and labels these six new elements as requiring an engine module update. Once the new SML release is adopted, the showcase can render these widgets directly using the same bounded host fixtures.
