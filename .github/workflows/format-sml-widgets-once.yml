@@ -26,3 +26,7 @@ jobs:
             git commit -m "style(sml): gofmt dashboard widget implementation and tests"
             git push origin HEAD:refs/heads/feat/terminal-dashboard-widgets
           fi
+      - name: Verify SML widget tests
+        run: |
+          go test ./internal/engine ./...
+          go vet ./...
