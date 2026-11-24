@@ -150,6 +150,8 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		return renderGauge(n, values, width), nil
 	case "sparkline":
 		return renderSparkline(n, values, width), nil
+	case "heatmap", "bar-chart", "stacked-bar", "waveform", "kpi", "activity-feed":
+		return renderDashboardWidget(n, values, width), nil
 	case "screen", "component", "column":
 		return v.lines(n.Children, values, width, depth)
 	case "section":

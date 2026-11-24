@@ -34,6 +34,7 @@ var bindingName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]{0,95}$`)
 var sessionArgument = regexp.MustCompile(`^[a-z][a-z0-9_]{0,31}$`)
 var sessionStateSource = regexp.MustCompile(`^state\.[a-z][a-z0-9_]{0,31}$`)
 var uiLabel = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9 _./:+-]{0,46}$`)
+
 // Only host-owned i18n.* values may replace interactive display text.
 var localizedControlKey = regexp.MustCompile(`^i18n\.[A-Za-z_][A-Za-z0-9_.]{0,89}$`)
 var actionID = regexp.MustCompile("^[a-z][a-z0-9_.-]{0,63}$")
