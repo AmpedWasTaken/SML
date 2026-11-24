@@ -31,6 +31,9 @@ type Element struct {
 	Accent      string
 	HeaderStyle string
 	RowStyle    string
+	Animation   string
+	DurationMS  int
+	Easing      string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -151,6 +154,7 @@ func (out *layoutBlock) mark(n Node, id string, width int) {
 		ID: id, Kind: n.Kind, Bounds: Rect{Width: min(actual, width), Height: len(out.lines)},
 		Glow: n.Attr("glow", "none"), GlowColor: n.Attr("glow-color", ""),
 		Accent: n.Attr("accent", ""), HeaderStyle: n.Attr("header-style", "default"), RowStyle: n.Attr("row-style", "plain"),
+		Animation: n.Attr("animate", ""), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
 	})
 }
 func controlNode(n Node) bool {
