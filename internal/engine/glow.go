@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // GlowOptions controls optional ANSI rendering for SML panel/table effects.
@@ -13,6 +14,10 @@ type GlowOptions struct {
 	TrueColor bool
 	// NoColor takes precedence over TrueColor for legacy terminal clients.
 	NoColor bool
+	// Phase is supplied by the host; no timer or I/O is created by SML.
+	Phase         time.Duration
+	Animate       bool
+	ReducedMotion bool
 }
 
 type glowInk struct {
@@ -92,7 +97,7 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 		if element.Kind != "panel" && element.Kind != "table" {
 			continue
 		}
-		if element.Glow == "none" && element.Accent == "" && element.HeaderStyle == "default" && element.RowStyle == "plain" {
+		if element.Glow == "none" && element.Accent == "" && element.HeaderStyle == "default" && element.RowStyle == "plain" && element.Animation == "" {
 			continue
 		}
 		x0, y0, x1, y1, ok := glowBounds(frame, element)
@@ -114,6 +119,9 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 			brightness = 83
 		case "strong":
 			brightness = 100
+		}
+		if opts.Animate && !opts.ReducedMotion && element.Animation == "pulse" {
+			brightness = animationBrightness(element, opts.Phase, brightness, 0)
 		}
 		base := glowSGR(glowShade(color, brightness), false)
 		bright := glowSGR(glowShade(color, min(100, brightness+18)), false)
@@ -144,6 +152,10 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 					ink = base
 				} else {
 					ink = muted
+				}
+				if opts.Animate && !opts.ReducedMotion && (element.Animation == "sweep" || element.Animation == "fade") {
+					position := float64(x-x0) / float64(max(1, x1-x0-1))
+					ink = glowSGR(glowShade(color, animationBrightness(element, opts.Phase, brightness, position)), false)
 				}
 				inks[y][x].fg = ink
 				styled = true
