@@ -304,7 +304,7 @@ func (v View) HasAnimation() bool {
 			return false
 		}
 		for _, node := range nodes {
-			if node.Kind == "gif" {
+			if node.Kind == "gif" || node.Attr("animate", "") != "" {
 				return true
 			}
 			if node.Kind == "include" || node.Kind == "use" {
