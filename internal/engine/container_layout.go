@@ -8,7 +8,7 @@ import (
 
 func layoutStyleAttribute(key string) bool {
 	switch key {
-	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items":
+	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items", "display", "flex-direction", "justify-content", "flex-grow", "flex-basis":
 		return true
 	}
 	return false
@@ -16,8 +16,10 @@ func layoutStyleAttribute(key string) bool {
 
 func layoutStyleTarget(kind, key string) bool {
 	switch key {
-	case "width", "min-width", "max-width":
+	case "width", "min-width", "max-width", "flex-grow", "flex-basis":
 		return kind == "box"
+	case "display", "flex-direction", "justify-content":
+		return kind == "row"
 	case "columns", "weights":
 		return kind == "grid"
 	case "gap", "row-gap", "collapse-below", "align-items":
@@ -27,6 +29,24 @@ func layoutStyleTarget(kind, key string) bool {
 }
 
 func validateLayoutStyleValue(key, value string) error {
+	switch key {
+	case "display":
+		if value == "flex" || value == "row" {
+			return nil
+		}
+		return fmt.Errorf("row display requires flex or row")
+	case "flex-direction":
+		if value == "row" || value == "column" {
+			return nil
+		}
+		return fmt.Errorf("flex-direction requires row or column")
+	case "justify-content":
+		switch value {
+		case "start", "center", "end", "space-between":
+			return nil
+		}
+		return fmt.Errorf("unsupported justify-content %q", value)
+	}
 	if key == "align-items" {
 		switch value {
 		case "start", "center", "end":
@@ -47,7 +67,7 @@ func validateLayoutStyleValue(key, value string) error {
 		}
 		return nil
 	}
-	if key == "width" || key == "min-width" || key == "max-width" {
+	if key == "width" || key == "min-width" || key == "max-width" || key == "flex-basis" {
 		if value == "auto" {
 			return nil
 		}
@@ -61,8 +81,10 @@ func validateLayoutStyleValue(key, value string) error {
 	}
 	lo, hi := 0, 8
 	switch key {
-	case "width", "min-width", "max-width":
+	case "width", "min-width", "max-width", "flex-basis":
 		lo, hi = 12, 240
+	case "flex-grow":
+		lo, hi = 0, 16
 	case "columns":
 		lo, hi = 1, 8
 	case "collapse-below":
