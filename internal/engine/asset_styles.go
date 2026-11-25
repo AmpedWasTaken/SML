@@ -20,29 +20,38 @@ type assetStyles struct {
 }
 
 func loadAssetStyles(dir string) (*assetStyles, error) {
-	path := filepath.Join(dir, "styles.json")
-	info, err := os.Lstat(path)
-	if errors.Is(err, os.ErrNotExist) {
+	jsonPath := filepath.Join(dir, "styles.json")
+	cssPath := filepath.Join(dir, "styles.smlcss")
+	jsonData, err := readStyleAsset(jsonPath)
+	if err != nil {
+		return nil, err
+	}
+	cssData, err := readStyleAsset(cssPath)
+	if err != nil {
+		return nil, err
+	}
+	if jsonData != nil && cssData != nil {
+		return nil, errors.New("use either styles.json or styles.smlcss, not both")
+	}
+	if jsonData == nil && cssData == nil {
 		return nil, nil
 	}
-	if err != nil {
-		return nil, err
-	}
-	if !info.Mode().IsRegular() || info.Size() > maxFileSize {
-		return nil, errors.New("invalid SML styles.json file")
-	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
 	var styles assetStyles
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&styles); err != nil {
-		return nil, fmt.Errorf("styles.json: %w", err)
-	}
-	if err := decoder.Decode(new(any)); err != io.EOF {
-		return nil, errors.New("styles.json: unexpected trailing data")
+	if cssData != nil {
+		parsed, err := parseStyleCSS(string(cssData))
+		if err != nil {
+			return nil, err
+		}
+		styles = parsed
+	} else {
+		decoder := json.NewDecoder(bytes.NewReader(jsonData))
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&styles); err != nil {
+			return nil, fmt.Errorf("styles.json: %w", err)
+		}
+		if err := decoder.Decode(new(any)); err != io.EOF {
+			return nil, errors.New("styles.json: unexpected trailing data")
+		}
 	}
 	if len(styles.Tokens) > 128 || len(styles.Classes) > 128 || len(styles.Defaults) > 32 {
 		return nil, errors.New("styles.json: too many tokens or classes")
@@ -72,6 +81,12 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 			if props, ok := inlineProps[kind]; ok && !props[key] {
 				return nil, fmt.Errorf("styles.json: unsupported %s default %q", kind, key)
 			}
+			if kind == "table" && key == "style" {
+				if !tableStyles[value] {
+					return nil, fmt.Errorf("invalid table style %q", value)
+				}
+				continue
+			}
 			resolved, err := styles.resolve(key, value)
 			if err != nil {
 				return nil, fmt.Errorf("styles.json: defaults for %q: %w", kind, err)
@@ -80,6 +95,20 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 		}
 	}
 	return &styles, nil
+}
+
+func readStyleAsset(path string) ([]byte, error) {
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsRegular() || info.Size() > maxFileSize {
+		return nil, fmt.Errorf("invalid SML style file %s", filepath.Base(path))
+	}
+	return os.ReadFile(path)
 }
 
 func sharedStyleAttribute(key string) bool {
