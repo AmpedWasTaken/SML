@@ -143,6 +143,17 @@ func parseStyleCSS(source string) (assetStyles, error) {
 					out.States[part] = map[string]string{}
 				}
 				target = out.States[part]
+			} else if strings.Contains(part, "#") || strings.Count(part, ".") > 1 || (strings.Contains(part, ".") && !strings.HasPrefix(part, ".")) {
+				rule, err := parseCompoundSelector(part)
+				if err != nil {
+					return out, err
+				}
+				rule.attr = make(map[string]string, len(attrs))
+				out.Compound = append(out.Compound, rule)
+				if len(out.Compound) > 128 {
+					return out, fmt.Errorf("too many compound selectors")
+				}
+				target = rule.attr
 			} else if strings.HasPrefix(part, ".") {
 				name := part[1:]
 				if !validName.MatchString(name) {
@@ -191,6 +202,11 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			if err := normalizeCSS(attrs, out.Tokens, keyframes); err != nil {
 				return out, err
 			}
+		}
+	}
+	for _, rule := range out.Compound {
+		if err := normalizeCSS(rule.attr, out.Tokens, keyframes); err != nil {
+			return out, err
 		}
 	}
 	for _, rule := range out.Media {
