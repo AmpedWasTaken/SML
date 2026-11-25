@@ -145,6 +145,9 @@ func (s *assetStyles) resolve(key, value string) (string, error) {
 			return "", fmt.Errorf("unknown SML design token %q", name)
 		}
 	}
+	if value == "inherit" && inheritableStyle(key) {
+		return value, nil
+	}
 	if layoutStyleAttribute(key) {
 		if err := validateLayoutStyleValue(key, value); err != nil {
 			return "", err
@@ -158,10 +161,10 @@ func (s *assetStyles) resolve(key, value string) (string, error) {
 // Defaults have lowest priority; classes are applied left to right; explicit inline attributes win.
 // The ordinary parser still validates every resolved attribute against its node.
 func applyAssetStyles(nodes []Node, styles *assetStyles) error {
-	return applyContextStyles(nodes, styles, nil)
+	return applyContextStyles(nodes, styles, nil, nil)
 }
 
-func applyContextStyles(nodes []Node, styles *assetStyles, ancestors []cssAncestor) error {
+func applyContextStyles(nodes []Node, styles *assetStyles, ancestors []cssAncestor, inherited map[string]string) error {
 	for i := range nodes {
 		n := &nodes[i]
 		spec, hasClass := n.Attrs["class"]
@@ -226,9 +229,45 @@ func applyContextStyles(nodes []Node, styles *assetStyles, ancestors []cssAncest
 				n.Attrs[key] = resolved
 			}
 		}
-		if err := applyContextStyles(n.Children, styles, append(ancestors, original)); err != nil {
+		computed := inherited
+		for _, key := range []string{"foreground", "background"} {
+			if n.Attr(key, "") == "inherit" {
+				if !supportsInheritedStyle(*n, key) {
+					return fmt.Errorf("inherit is not supported for %s on %s", key, n.Kind)
+				}
+				if value := inherited[key]; value != "" {
+					n.Attrs[key] = value
+				} else {
+					delete(n.Attrs, key)
+				}
+			}
+			if value := n.Attr(key, ""); supportsInheritedStyle(*n, key) && validHexColor(value) {
+				if computed == nil || computed[key] != value {
+					next := make(map[string]string, 2)
+					for k, v := range computed {
+						next[k] = v
+					}
+					next[key] = value
+					computed = next
+				}
+			}
+		}
+		if err := applyContextStyles(n.Children, styles, append(ancestors, original), computed); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func inheritableStyle(key string) bool {
+	return key == "foreground" || key == "background"
+}
+
+func supportsInheritedStyle(n Node, key string) bool {
+	switch n.Kind {
+	case "box", "panel", "button", "text":
+		return inheritableStyle(key)
+	default:
+		return false
+	}
 }
