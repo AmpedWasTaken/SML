@@ -135,7 +135,18 @@ func parseStyleCSS(source string) (assetStyles, error) {
 		for _, part := range selectors {
 			part = strings.TrimSpace(part)
 			var target map[string]string
-			if strings.Contains(part, ":") {
+			if strings.ContainsAny(part, " >\t\n\r") || (strings.Contains(part, ":") && strings.ContainsAny(part, ".#")) {
+				rule, err := parseContextSelector(part)
+				if err != nil {
+					return out, err
+				}
+				rule.attr = make(map[string]string, len(attrs))
+				out.Compound = append(out.Compound, rule)
+				if len(out.Compound) > 128 {
+					return out, fmt.Errorf("too many compound selectors")
+				}
+				target = rule.attr
+			} else if strings.Contains(part, ":") {
 				if _, _, err := cssStateSelector(part); err != nil {
 					return out, err
 				}
