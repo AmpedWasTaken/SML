@@ -258,7 +258,7 @@ func normalizeCSS(attrs, tokens, keyframes map[string]string) error {
 		}
 		delete(attrs, "animation")
 	}
-	for _, key := range []string{"width", "min-width", "max-width", "gap", "row-gap", "collapse-below", "padding"} {
+	for _, key := range []string{"width", "min-width", "max-width", "gap", "row-gap", "collapse-below", "padding", "flex-basis"} {
 		if v, ok := attrs[key]; ok {
 			attrs[key] = strings.TrimSuffix(v, "ch")
 		}
