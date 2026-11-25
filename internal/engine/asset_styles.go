@@ -14,8 +14,8 @@ import (
 // assetStyles is an optional shared, inert presentation stylesheet.
 // Classes may set only recognized visual attributes; never action metadata.
 type assetStyles struct {
-	Tokens  map[string]string            `json:"tokens"`
-	Classes map[string]map[string]string `json:"classes"`
+	Tokens   map[string]string            `json:"tokens"`
+	Classes  map[string]map[string]string `json:"classes"`
 	Defaults map[string]map[string]string `json:"defaults"`
 }
 
