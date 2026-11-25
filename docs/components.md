@@ -288,8 +288,8 @@ retain an unframed control. Inputs with `appearance="boxed"` retain
 their existing full-width input layout.
 
 SMLCSS is a deliberately small terminal styling grammar, not browser CSS.
-It does not support imports, scripts, arbitrary nested selectors, pseudo-selectors, or
-arbitrary properties. Bounded animation keyframes are described below. Component selectors and classes accept only validated
+It does not support imports, scripts, arbitrary nested selectors, or
+arbitrary properties. Supported control states and media rules are described below. Bounded animation keyframes are described below. Component selectors and classes accept only validated
 presentation attributes. Table presets use `style` on the table selector.
 Existing explicit styles remain valid.
 
@@ -386,6 +386,108 @@ rows, err := sml.PaintGlowFrame(frame, sml.GlowOptions{
 
 Animation is quantized to the existing 12 FPS rendering phase. Hosts can
 disable color or respect reduced-motion preferences. SMLCSS does not own
-the event loop or schedule background work. Browser CSS transforms,
-general property keyframes, transitions, hover/focus selectors, full
-flexbox and arbitrary media queries are not implemented in this increment.
+the event loop or schedule background work. Browser CSS transforms, general property keyframes, and transitions are not
+implemented. The following section describes the supported subset of control
+states, media queries, and flex layout.
+
+### Responsive media queries, flex rows and control states
+
+```css
+row {
+    display: flex;
+    flex-direction: row;
+    gap: 2ch;
+    justify-content: space-between;
+    align-items: start;
+}
+
+.sidebar {
+    flex-basis: 24ch;
+    flex-grow: 0;
+}
+
+.content {
+    flex-basis: 20ch;
+    flex-grow: 1;
+}
+
+@media (max-width: 70ch) {
+    row {
+        flex-direction: column;
+        row-gap: 1;
+    }
+    grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+button {
+    border: round;
+    color: #FFFFFF;
+}
+
+button:hover {
+    color: #67D9A5;
+}
+
+button:focus {
+    border-color: #00CCFF;
+}
+
+button:disabled {
+    color: #777777;
+}
+```
+
+Use flex sizing on box children of a row:
+
+```xml
+<screen name="home" version="3">
+    <row>
+        <box class="sidebar">
+            <panel title="Navigation">
+                <button id="home" label="Home" action="nav.home"/>
+            </panel>
+        </box>
+        <box class="content">
+            <panel title="Workspace">
+                <text>Welcome back</text>
+            </panel>
+        </box>
+    </row>
+</screen>
+```
+
+A flex row supports row/column direction, up to eight horizontal children,
+integer grow factors (0–16), cell or percentage bases, gaps,
+`justify-content: start|center|end|space-between`, and vertical
+`align-items: start|center|end`. Items use a minimum horizontal allocation
+of 14 cells. When their bases do not fit, the row stacks instead of
+clipping controls. This is a bounded terminal-specific subset, not browser
+Flexbox: shrink factors, wrap lines, and arbitrary positioning are not
+implemented. Use flex-basis rather than width on flex item boxes when
+allocating space in the parent row.
+
+Media rules support one inclusive min-width or max-width condition
+(12–240 cells, relative to the full terminal), and box, grid, or row
+component selectors with layout properties. Matching media rules replace
+global component defaults in source order; explicit inline attributes and
+classes still win. Grid track changes must specify the full track vector.
+
+State selectors accept control names followed by `:hover`, `:focus` or
+`:disabled`. They can change foreground, background and border colors only.
+They cannot change border geometry, enabled state, or action metadata.
+The host supplies focus and hover IDs from the rendered frame:
+
+```go
+rows, err := sml.PaintGlowFrame(frame, sml.GlowOptions{
+    TrueColor: true,
+    FocusedID: focusedID,
+    HoveredID: hoveredID,
+})
+```
+
+Disabled state is derived from the rendered control, not from CSS.
+Disabled paint takes precedence over focus, which takes precedence over
+hover for overlapping properties. No-color clients retain the plain frame.
+CSS does not manage mouse or keyboard events or grant permissions.
