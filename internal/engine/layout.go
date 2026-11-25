@@ -243,6 +243,7 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		return layoutBlock{}, errors.New("SML layout depth exceeded")
 	}
 	width = max(12, min(240, width))
+	n = v.responsiveNode(n)
 	result := layoutBlock{}
 	id := n.Attr("id", path)
 	// Repeated component controls must get a stable, iteration-local identity.
@@ -544,6 +545,7 @@ func (v View) RenderFrame(values map[string]string, width int) (Frame, error) {
 	if width < 12 || width > 240 {
 		return Frame{}, errors.New("SML frame width must be 12..240")
 	}
+	v.cssWidth = width
 	resolved := v.ResolveBindings(values)
 	block, err := v.renderLayoutNodes(v.Nodes, resolved, width, 0, "screen:"+v.Name)
 	if err != nil {
