@@ -11,8 +11,12 @@ func validateBox(n Node) error {
 	}
 	for key, value := range n.Attrs {
 		switch key {
-		case "width", "min-width", "max-width", "flex-grow", "flex-basis":
+		case "width", "min-width", "max-width", "flex-grow", "flex-basis", "max-height", "overflow":
 			if err := validateLayoutStyleValue(key, value); err != nil {
+				return err
+			}
+		case "scroll-key":
+			if err := validateBoxScrollKey(value); err != nil {
 				return err
 			}
 		case "align":
