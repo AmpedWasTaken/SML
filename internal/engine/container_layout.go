@@ -8,7 +8,7 @@ import (
 
 func layoutStyleAttribute(key string) bool {
 	switch key {
-	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items", "display", "flex-direction", "justify-content", "flex-grow", "flex-basis", "overflow", "max-height":
+	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items", "display", "flex-direction", "justify-content", "flex-wrap", "flex-grow", "flex-basis", "flex-shrink", "overflow", "max-height":
 		return true
 	}
 	return false
@@ -16,9 +16,9 @@ func layoutStyleAttribute(key string) bool {
 
 func layoutStyleTarget(kind, key string) bool {
 	switch key {
-	case "width", "min-width", "max-width", "flex-grow", "flex-basis", "overflow", "max-height":
+	case "width", "min-width", "max-width", "flex-grow", "flex-basis", "flex-shrink", "overflow", "max-height":
 		return kind == "box"
-	case "display", "flex-direction", "justify-content":
+	case "display", "flex-direction", "justify-content", "flex-wrap":
 		return kind == "row"
 	case "columns", "weights":
 		return kind == "grid"
@@ -36,6 +36,11 @@ func validateLayoutStyleValue(key, value string) error {
 			return nil
 		}
 		return fmt.Errorf("overflow requires visible, hidden or auto")
+	case "flex-wrap":
+		if value == "nowrap" || value == "wrap" {
+			return nil
+		}
+		return fmt.Errorf("flex-wrap requires nowrap or wrap")
 	case "display":
 		if value == "flex" || value == "row" {
 			return nil
@@ -89,7 +94,7 @@ func validateLayoutStyleValue(key, value string) error {
 	switch key {
 	case "width", "min-width", "max-width", "flex-basis":
 		lo, hi = 12, 240
-	case "flex-grow":
+	case "flex-grow", "flex-shrink":
 		lo, hi = 0, 16
 	case "max-height":
 		lo, hi = 1, 3000
