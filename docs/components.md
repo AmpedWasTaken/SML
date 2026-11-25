@@ -491,3 +491,31 @@ Disabled state is derived from the rendered control, not from CSS.
 Disabled paint takes precedence over focus, which takes precedence over
 hover for overlapping properties. No-color clients retain the plain frame.
 CSS does not manage mouse or keyboard events or grant permissions.
+
+### Bounded scroll containers
+
+```css
+.scroll-area {
+    overflow: auto;
+    max-height: 20;
+}
+```
+
+```xml
+<screen name="logs" version="3">
+    <box class="scroll-area" scroll-key="state.scroll">
+        <repeat source="app.messages" as="message" limit="100">
+            <text>{{message}}</text>
+        </repeat>
+    </box>
+</screen>
+```
+
+The host supplies `state.scroll` as a nonnegative integer row offset.
+The renderer clamps the offset to the available content, clips the box
+to its maximum height (1–3000 terminal rows), translates visible element
+bounds and removes off-screen hotspots. `overflow: hidden` clips without
+scrolling; `overflow: visible` preserves normal box behavior. The host owns
+wheel/key events and scroll state. This is a bounded post-render viewport,
+not lazy rendering or a terminal event loop. `max-height` is measured in
+rows, not columns.
