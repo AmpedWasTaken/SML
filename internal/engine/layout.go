@@ -260,7 +260,13 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		return result, nil
 	case "box":
 		childWidth, left := boxDimensions(n, width)
-		child, err := v.renderLayoutNodes(n.Children, values, childWidth, depth, path)
+		var child layoutBlock
+		var err error
+		if n.Attr("position", "static") == "relative" {
+			child, err = v.renderPositionedBox(n, values, childWidth, depth, path)
+		} else {
+			child, err = v.renderLayoutNodes(n.Children, values, childWidth, depth, path)
+		}
 		if err != nil {
 			return result, err
 		}
