@@ -26,21 +26,21 @@ type Element struct {
 	Bounds Rect
 	// Presentation-only SML metadata. The base frame stays plain text;
 	// clients opt into ANSI colors through PaintGlowFrame.
-	Glow           string
-	GlowColor      string
-	Accent         string
-	HeaderStyle    string
-	RowStyle       string
-	Animation      string
-	AnimationCurve string
+	Glow            string
+	GlowColor       string
+	Accent          string
+	HeaderStyle     string
+	RowStyle        string
+	Animation       string
+	AnimationCurve  string
 	AnimationRepeat string
-	DurationMS     int
-	Easing         string
-	Foreground     string
-	Background     string
-	BorderColor    string
-	FGGradient     string
-	BorderGradient string
+	DurationMS      int
+	Easing          string
+	Foreground      string
+	Background      string
+	BorderColor     string
+	FGGradient      string
+	BorderGradient  string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -394,13 +394,17 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 				x += childWidth + gap
 			}
 			for i := range parts {
-				switch n.Attr("align-items","start") {
-				case "center": parts[i].y = (h-len(parts[i].block.lines))/2
-				case "end": parts[i].y = h-len(parts[i].block.lines)
+				switch n.Attr("align-items", "start") {
+				case "center":
+					parts[i].y = (h - len(parts[i].block.lines)) / 2
+				case "end":
+					parts[i].y = h - len(parts[i].block.lines)
 				}
 			}
 			rendered := renderCanvas(width, h, parts)
-			if start > 0 { result.lines = append(result.lines, make([]string, boundedInt(n.Attr("row-gap","0"),0,0,8))...) }
+			if start > 0 {
+				result.lines = append(result.lines, make([]string, boundedInt(n.Attr("row-gap", "0"), 0, 0, 8))...)
+			}
 			baseY := len(result.lines)
 			result.lines = append(result.lines, rendered...)
 			for _, part := range parts {
