@@ -91,6 +91,17 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			return out, err
 		}
 		source = tail
+		if strings.HasPrefix(selector, "@media ") {
+			media, err := parseCSSMedia(selector, body)
+			if err != nil {
+				return out, err
+			}
+			out.Media = append(out.Media, media...)
+			if len(out.Media) > 128 {
+				return out, fmt.Errorf("too many SMLCSS media rules")
+			}
+			continue
+		}
 		if strings.HasPrefix(selector, "@keyframes ") {
 			name := strings.TrimSpace(strings.TrimPrefix(selector, "@keyframes "))
 			if !validName.MatchString(name) || keyframes[name] != "" || len(keyframes) >= 32 || name == "pulse" || name == "sweep" || name == "fade" {
@@ -151,6 +162,11 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			if err := normalizeCSS(attrs, out.Tokens, keyframes); err != nil {
 				return out, err
 			}
+		}
+	}
+	for _, rule := range out.Media {
+		if err := normalizeCSS(rule.attr, out.Tokens, keyframes); err != nil {
+			return out, err
 		}
 	}
 	return out, nil
