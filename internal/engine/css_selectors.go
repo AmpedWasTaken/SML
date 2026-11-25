@@ -229,6 +229,9 @@ func validateCompoundRules(styles *assetStyles) error {
 			if err != nil {
 				return err
 			}
+			if rule.state != "" && resolved == "inherit" {
+				return fmt.Errorf("state selectors require explicit colors")
+			}
 			rule.attr[key] = resolved
 		}
 	}
