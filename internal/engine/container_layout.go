@@ -8,7 +8,7 @@ import (
 
 func layoutStyleAttribute(key string) bool {
 	switch key {
-	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items", "display", "flex-direction", "justify-content", "flex-grow", "flex-basis":
+	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items", "display", "flex-direction", "justify-content", "flex-grow", "flex-basis", "overflow", "max-height":
 		return true
 	}
 	return false
@@ -16,7 +16,7 @@ func layoutStyleAttribute(key string) bool {
 
 func layoutStyleTarget(kind, key string) bool {
 	switch key {
-	case "width", "min-width", "max-width", "flex-grow", "flex-basis":
+	case "width", "min-width", "max-width", "flex-grow", "flex-basis", "overflow", "max-height":
 		return kind == "box"
 	case "display", "flex-direction", "justify-content":
 		return kind == "row"
@@ -30,6 +30,12 @@ func layoutStyleTarget(kind, key string) bool {
 
 func validateLayoutStyleValue(key, value string) error {
 	switch key {
+	case "overflow":
+		switch value {
+		case "visible", "hidden", "auto":
+			return nil
+		}
+		return fmt.Errorf("overflow requires visible, hidden or auto")
 	case "display":
 		if value == "flex" || value == "row" {
 			return nil
@@ -85,6 +91,8 @@ func validateLayoutStyleValue(key, value string) error {
 		lo, hi = 12, 240
 	case "flex-grow":
 		lo, hi = 0, 16
+	case "max-height":
+		lo, hi = 1, 3000
 	case "columns":
 		lo, hi = 1, 8
 	case "collapse-below":
