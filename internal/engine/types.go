@@ -13,6 +13,7 @@ type Node struct {
 	Text     string
 	Children []Node
 	cssFixed map[string]bool
+	cssPaint *cssControlPaint
 }
 
 func (n Node) Attr(key, fallback string) string {
