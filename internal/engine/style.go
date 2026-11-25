@@ -13,6 +13,7 @@ var styleAttributes = map[string]bool{
 	"variant": true, "tone": true, "glow": true, "glow-color": true, "accent": true,
 	"animate": true, "duration-ms": true, "easing": true,
 	"foreground": true, "background": true, "border-color": true,
+	"foreground-gradient": true, "border-gradient": true,
 }
 var styleTargets = map[string]bool{
 	"text": true, "badge": true, "alert": true, "metric": true,
@@ -23,15 +24,15 @@ var styleTargets = map[string]bool{
 // Each visual element accepts only attributes used by its actual renderer.
 // Reject mistyped/unsupported properties rather than silently ignoring them.
 var inlineProps = map[string]map[string]bool{
-	"text":          {"value": true, "align": true, "case": true, "padding": true, "tone": true, "foreground": true, "background": true, "border-color": true},
+	"text":          {"value": true, "align": true, "case": true, "padding": true, "tone": true, "foreground": true, "background": true, "foreground-gradient": true},
 	"badge":         {"value": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
 	"alert":         {"value": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
 	"metric":        {"label": true, "value": true, "align": true, "case": true, "padding": true, "tone": true},
 	"field":         {"key": true, "label": true, "unit": true, "fallback": true, "align": true, "case": true, "padding": true, "tone": true},
 	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
-	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animate": true, "duration-ms": true, "easing": true, "foreground": true, "background": true, "border-color": true},
+	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animate": true, "duration-ms": true, "easing": true, "foreground": true, "background": true, "border-color": true, "foreground-gradient": true, "border-gradient": true},
 	"divider":       {"variant": true},
-	"button":        {"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true, "foreground": true, "background": true, "border-color": true},
+	"button":        {"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true, "foreground": true, "background": true, "foreground-gradient": true},
 	"link":          {"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 	"plugin-action": {"label": true, "label-key": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 }
@@ -49,6 +50,10 @@ func validateStyleAttribute(key, value string) error {
 		}
 	case "glow-color", "accent", "foreground", "background", "border-color":
 		if validHexColor(value) {
+			return nil
+		}
+	case "foreground-gradient", "border-gradient":
+		if _, ok := parseCellGradient(value); ok {
 			return nil
 		}
 	case "border":

@@ -1,9 +1,9 @@
 <screen name="framed-login" version="3">
-  <panel title="{{login.brand}} / LOGIN" border="round" padding="1" border-color="#a997fa">
+  <panel title="{{login.brand}} / LOGIN" border="round" padding="1" border-gradient="#5cddea,#9781fd,#f77dc1,#5cddea">
     <text foreground="#76d8d7">{{login.heading}}</text>
     <text foreground="#71717a">LANGUAGE / {{login.language}} · Ctrl+L / F2</text>
     <divider/>
-    <text align="center" foreground="#a997fa">{{login.hero}}</text>
+    <text align="center" foreground-gradient="#5cddea,#9781fd,#f77dc1">{{login.hero}}</text>
     <text align="center" foreground="#a1a1aa">{{login.subtitle}}</text>
     <text align="center" foreground="#52525b">{{login.clock}}</text>
     <spacer/>

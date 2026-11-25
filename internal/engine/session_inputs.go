@@ -21,7 +21,7 @@ func validateSessionInput(n Node) error {
 	for name := range n.Attrs {
 		switch name {
 		case "label", "key", "id", "placeholder", "min", "max":
-		case "appearance", "border", "foreground", "background", "border-color":
+		case "appearance", "border", "foreground", "background", "border-color", "foreground-gradient", "border-gradient":
 			if n.Kind != "input" {
 				return fmt.Errorf("attribute %q requires input", name)
 			}

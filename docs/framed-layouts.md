@@ -20,3 +20,11 @@ See examples/framed-login.sml for an entirely declarative layout. The
 example is an engine demonstration, not a deployed Sentinel login. Modal
 layering, perimeter gradients, exact legacy snapshot parity, host caret
 integration and older-client profile selection require further work.
+
+A `foreground-gradient` or `border-gradient` takes two to eight comma-separated
+hex colors. Foreground gradients follow horizontal cell position. Border
+gradients follow the rectangle perimeter clockwise, allowing a continuous
+closed loop when the first and last color match. See
+`examples/language-dialog.sml` for a compact conditional dialog body.
+The host must still composite it over the login background; that overlay
+is not implemented by this example.

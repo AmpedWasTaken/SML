@@ -26,17 +26,19 @@ type Element struct {
 	Bounds Rect
 	// Presentation-only SML metadata. The base frame stays plain text;
 	// clients opt into ANSI colors through PaintGlowFrame.
-	Glow        string
-	GlowColor   string
-	Accent      string
-	HeaderStyle string
-	RowStyle    string
-	Animation   string
-	DurationMS  int
-	Easing      string
-	Foreground  string
-	Background  string
-	BorderColor string
+	Glow           string
+	GlowColor      string
+	Accent         string
+	HeaderStyle    string
+	RowStyle       string
+	Animation      string
+	DurationMS     int
+	Easing         string
+	Foreground     string
+	Background     string
+	BorderColor    string
+	FGGradient     string
+	BorderGradient string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -158,6 +160,7 @@ func (out *layoutBlock) mark(n Node, id string, width int) {
 		Glow: n.Attr("glow", "none"), GlowColor: n.Attr("glow-color", ""),
 		Accent: n.Attr("accent", ""), HeaderStyle: n.Attr("header-style", "default"), RowStyle: n.Attr("row-style", "plain"),
 		Foreground: n.Attr("foreground", ""), Background: n.Attr("background", ""), BorderColor: n.Attr("border-color", ""),
+		FGGradient: n.Attr("foreground-gradient", ""), BorderGradient: n.Attr("border-gradient", ""),
 		Animation: n.Attr("animate", ""), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
 	})
 }
