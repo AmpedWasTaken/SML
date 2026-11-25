@@ -609,5 +609,88 @@ Wide graphemes crossing a layer edge are cleared as whole clusters.
 This is a local compositing mechanism, not a complete browser stacking
 context implementation. Absolute positioning must be on a direct box
 child of a relative box; position properties cannot be altered by media
-queries. Fixed and sticky positioning, transparent layers, focus traps
-and host-managed modal navigation are not implemented.
+queries. Fixed positioning, transparent layers, focus traps and host-managed modal
+navigation are not implemented. Sticky scroll headers are described below.
+
+### Sticky scroll headers
+
+```css
+.scroll-area {
+    overflow: auto;
+    max-height: 18;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+}
+```
+
+```xml
+<screen name="activity" version="3">
+    <box class="scroll-area" scroll-key="state.scroll">
+        <box class="header">
+            <text>Recent activity</text>
+            <divider/>
+        </box>
+        <repeat source="app.messages" as="message" limit="100">
+            <text>{{message}}</text>
+        </repeat>
+    </box>
+</screen>
+```
+
+The sticky box must be the first direct child of a non-relative box
+with `overflow: auto`. Its rows remain at the top of the viewport
+while the body scrolls independently. `top` reserves rows above the
+header; the header and offset consume part of the parent's maximum
+height. The body receives the remaining height, and off-screen
+hitboxes are clipped. If the header fills the viewport, the body is
+not rendered. This is a pinned header, not general browser sticky
+positioning: arbitrary in-flow sticky elements, sticky footers and
+fixed screen positioning are not included.
+
+### CSS color transitions
+
+```css
+button {
+    color: #888888;
+    transition: color 200ms ease-in-out;
+}
+
+button:hover {
+    color: #67D9A5;
+}
+
+button:focus {
+    color: #FFFFFF;
+}
+```
+
+Transitions are supported on control component selectors. The shorthand
+accepts `color`, `foreground`, `background-color`, `background`,
+`border-color` or `all`; one duration (16ms–10s); and optional easing
+(`linear`, `ease-in`, `ease-out`, `ease-in-out`). Only explicit RGB
+endpoints interpolate; terminal defaults and gradients switch directly.
+Disabled styling takes effect immediately. Reduced-motion mode skips
+interpolation.
+
+The host supplies previous and current focus/hover IDs, elapsed time,
+and redraw scheduling. For example:
+
+```go
+rows, err := sml.PaintGlowFrame(frame, sml.GlowOptions{
+    TrueColor:         true,
+    Transition:        true,
+    PreviousHoveredID: previousID,
+    HoveredID:         currentID,
+    TransitionElapsed: elapsed,
+})
+```
+
+SML performs deterministic RGB interpolation without changing glyphs,
+bounds, hit targets or bindings. There is no internal timer or retained
+transition state. Hosts that interrupt a running transition should
+manage their own timing; this API interpolates between state endpoints,
+not arbitrary in-flight colors. Layout transitions, transition lists,
+and general color keyframes are not yet supported.
