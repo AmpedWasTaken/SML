@@ -1,0 +1,35 @@
+:root {
+    --edge: round;
+    --accent: #67d9a5;
+}
+
+panel, button {
+    border: var(--edge);
+}
+
+box {
+    width: 90%;
+    min-width: 24ch;
+    max-width: 100ch;
+}
+
+grid {
+    grid-template-columns: 1fr 2fr;
+    column-gap: 2ch;
+    row-gap: 1;
+    align-items: center;
+    collapse-below: 60ch;
+}
+
+@keyframes breathe {
+    from { brightness: 40%; }
+    50% { brightness: 100%; }
+    to { brightness: 40%; }
+}
+
+.active {
+    border: double;
+    glow: medium;
+    glow-color: var(--accent);
+    animation: breathe 2s ease-in-out infinite;
+}
