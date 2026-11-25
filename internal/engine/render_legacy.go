@@ -64,6 +64,17 @@ func pad(s string, w int) string {
 	return PadCells(s, w)
 }
 func (v View) component(name string) (Node, error) {
+	if v.components != nil {
+		part, ok := v.components[name]
+		if !ok {
+			return Node{}, fmt.Errorf("SML component %q is not in the asset snapshot", name)
+		}
+		return part, nil
+	}
+	return v.loadComponent(name)
+}
+
+func (v View) loadComponent(name string) (Node, error) {
 	if !validName.MatchString(name) {
 		return Node{}, errors.New("invalid SML include name")
 	}

@@ -25,6 +25,13 @@ type View struct {
 	Name   string
 	Nodes  []Node
 	assets string
+	components map[string]Node
 }
 
-func (v View) WithAssets(dir string) View { v.assets = dir; return v }
+func (v View) WithAssets(dir string) View {
+	if v.assets != dir {
+		v.components = nil
+	}
+	v.assets = dir
+	return v
+}

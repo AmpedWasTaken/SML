@@ -72,7 +72,8 @@ func Parse(data []byte) (View, error) {
 			break
 		}
 		if err != nil {
-			return View{}, fmt.Errorf("invalid SML XML: %w", err)
+			line, column := d.InputPos()
+			return View{}, fmt.Errorf("invalid SML XML at %d:%d: %w", line, column, err)
 		}
 		switch t := tok.(type) {
 		case xml.StartElement:
@@ -81,7 +82,8 @@ func Parse(data []byte) (View, error) {
 				return View{}, errors.New("SML node/depth limit exceeded")
 			}
 			if !allowed[t.Name.Local] || t.Name.Space != "" {
-				return View{}, fmt.Errorf("unsupported SML component <%s>", t.Name.Local)
+				line, column := d.InputPos()
+				return View{}, fmt.Errorf("unsupported SML component <%s> at %d:%d", t.Name.Local, line, column)
 			}
 			n := &Node{Kind: t.Name.Local, Attrs: map[string]string{}}
 			for _, a := range t.Attr {
