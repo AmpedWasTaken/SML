@@ -734,3 +734,54 @@ reduced-motion modes do not animate. Host-provided phase and redraw
 scheduling remain required. Multiple concurrent animation tracks,
 named CSS colors, transform animations and arbitrary geometry
 keyframes are not implemented.
+
+### Compound selectors and specificity
+
+```css
+button {
+    border: round;
+    color: #CCCCCC;
+}
+
+.primary {
+    color: #67D9A5;
+}
+
+button.primary {
+    background-color: #14291E;
+}
+
+.primary.compact {
+    padding: 0;
+}
+
+#save {
+    color: #FFFFFF;
+}
+
+button#save.primary {
+    border: double;
+}
+```
+
+```xml
+<button id="save" class="primary compact" label="Save" action="app.save"/>
+```
+
+SMLCSS supports a component name, multiple classes and one explicit ID
+in a compound selector. Classes can be declared solely by appearing in
+a compound selector, so no empty marker rule is necessary. Grouped
+selectors also support compound rules.
+
+The cascade preserves existing behavior for backwards compatibility:
+component defaults, simple classes in markup order, matching compound
+rules by specificity, then explicit inline attributes. Specificity
+compares ID count, class count and component name in that order; ties
+are resolved by stylesheet source order. Media defaults remain below
+class, compound and inline declarations.
+
+Selectors match literal markup IDs before rendering, not generated
+repeat-instance IDs. They cannot assign IDs, action names, enabled
+conditions or other behavioral metadata. Descendant/child combinators,
+attribute selectors, universal selectors, compound pseudo-selectors
+and `!important` are not supported.
