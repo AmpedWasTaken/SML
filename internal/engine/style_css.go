@@ -166,6 +166,26 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			}
 		}
 	}
+	out.Transitions = make(map[string]cssTransition)
+	for kind, attrs := range out.Defaults {
+		if value, ok := attrs["transition"]; ok {
+			if _, _, err := cssStateSelector(kind + ":hover"); err != nil {
+				return out, err
+			}
+			if strings.HasPrefix(value, "@") {
+				value = out.Tokens[value[1:]]
+			}
+			spec, err := parseCSSTransition(value)
+			if err != nil {
+				return out, err
+			}
+			out.Transitions[kind] = spec
+			delete(attrs, "transition")
+			if len(attrs) == 0 {
+				delete(out.Defaults, kind)
+			}
+		}
+	}
 	for _, group := range []map[string]map[string]string{out.Classes, out.Defaults, out.States} {
 		for _, attrs := range group {
 			if err := normalizeCSS(attrs, out.Tokens, keyframes); err != nil {
