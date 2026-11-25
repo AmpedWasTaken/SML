@@ -16,6 +16,7 @@ import (
 type assetStyles struct {
 	Tokens  map[string]string            `json:"tokens"`
 	Classes map[string]map[string]string `json:"classes"`
+	Defaults map[string]map[string]string `json:"defaults"`
 }
 
 func loadAssetStyles(dir string) (*assetStyles, error) {
@@ -43,7 +44,7 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 	if err := decoder.Decode(new(any)); err != io.EOF {
 		return nil, errors.New("styles.json: unexpected trailing data")
 	}
-	if len(styles.Tokens) > 128 || len(styles.Classes) > 128 {
+	if len(styles.Tokens) > 128 || len(styles.Classes) > 128 || len(styles.Defaults) > 32 {
 		return nil, errors.New("styles.json: too many tokens or classes")
 	}
 	for name, value := range styles.Tokens {
@@ -59,6 +60,21 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 			resolved, err := styles.resolve(key, value)
 			if err != nil {
 				return nil, fmt.Errorf("styles.json: class %q: %w", name, err)
+			}
+			attrs[key] = resolved
+		}
+	}
+	for kind, attrs := range styles.Defaults {
+		if !styleTargets[kind] || len(attrs) == 0 {
+			return nil, fmt.Errorf("styles.json: invalid defaults target %q", kind)
+		}
+		for key, value := range attrs {
+			if props, ok := inlineProps[kind]; ok && !props[key] {
+				return nil, fmt.Errorf("styles.json: unsupported %s default %q", kind, key)
+			}
+			resolved, err := styles.resolve(key, value)
+			if err != nil {
+				return nil, fmt.Errorf("styles.json: defaults for %q: %w", kind, err)
 			}
 			attrs[key] = resolved
 		}
@@ -90,7 +106,7 @@ func (s *assetStyles) resolve(key, value string) (string, error) {
 	return value, nil
 }
 
-// Classes are applied left to right; explicit inline attributes take priority.
+// Defaults have lowest priority; classes are applied left to right; explicit inline attributes win.
 // The ordinary parser still validates every resolved attribute against its node.
 func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 	for i := range nodes {
@@ -119,6 +135,13 @@ func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 				}
 			}
 			n.Attrs = merged
+		}
+		if styles != nil {
+			for key, value := range styles.Defaults[n.Kind] {
+				if _, exists := n.Attrs[key]; !exists {
+					n.Attrs[key] = value
+				}
+			}
 		}
 		for key, value := range n.Attrs {
 			if sharedStyleAttribute(key) && strings.HasPrefix(value, "@") {
