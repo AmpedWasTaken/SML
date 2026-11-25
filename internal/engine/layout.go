@@ -482,7 +482,7 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		if controlNode(n) && len(lines) > 0 {
 			interactive := controlEnabled(n, values)
 			controlLine := 0
-			if n.Kind == "input" && n.Attr("appearance", "") == "boxed" && len(lines) == 3 {
+			if len(lines) == 3 {
 				controlLine = 1
 			}
 			text := lines[controlLine]
@@ -490,7 +490,7 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 			right := CellWidth(strings.TrimRight(text, " "))
 			right = min(right, width)
 			if controlLine == 1 {
-				lead, right = 1, width-1
+				lead, right = 1, min(width, CellWidth(text))-1
 			}
 			if interactive && right > lead {
 				generic := ""
