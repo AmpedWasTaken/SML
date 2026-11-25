@@ -138,6 +138,7 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		return nil, errors.New("SML nesting limit exceeded")
 	}
 	width = max(12, min(width, 240))
+	n = v.responsiveNode(n)
 	switch n.Kind {
 	case "gradient", "derive":
 		return nil, nil
@@ -418,6 +419,7 @@ func (v View) Render(values map[string]string) []string { return v.RenderWidth(v
 // RenderChecked returns rendered lines and any render-time error.
 // Unlike RenderWidth it does not convert errors to visible error text.
 func (v View) RenderChecked(values map[string]string, width int) ([]string, error) {
+	v.cssWidth = max(12, min(240, width))
 	return v.lines(v.Nodes, v.ResolveBindings(values), width, 0)
 }
 func (v View) RenderWidth(values map[string]string, width int) []string {
