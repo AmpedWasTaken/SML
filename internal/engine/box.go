@@ -32,8 +32,11 @@ func validateBox(n Node) error {
 		}
 	}
 	for _, key := range []string{"left", "top", "z-index"} {
-		if _, ok := n.Attrs[key]; ok && n.Attr("position", "static") != "absolute" {
-			return fmt.Errorf("%s requires position=absolute", key)
+		if _, ok := n.Attrs[key]; ok {
+			position := n.Attr("position", "static")
+			if position != "absolute" && !(position == "sticky" && key == "top") {
+				return fmt.Errorf("%s requires absolute positioning, or sticky for top", key)
+			}
 		}
 	}
 	return nil
