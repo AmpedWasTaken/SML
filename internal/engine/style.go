@@ -11,7 +11,7 @@ import (
 var styleAttributes = map[string]bool{
 	"border": true, "padding": true, "align": true, "case": true,
 	"variant": true, "tone": true, "glow": true, "glow-color": true, "accent": true,
-	"animate": true, "duration-ms": true, "easing": true, "animation-curve": true, "animation-repeat": true,
+	"animate": true, "duration-ms": true, "easing": true, "animation-curve": true, "animation-repeat": true, "animation-delay-ms": true, "animation-direction": true,
 	"foreground": true, "background": true, "border-color": true,
 	"foreground-gradient": true, "border-gradient": true, "appearance": true,
 }
@@ -31,7 +31,7 @@ var inlineProps = map[string]map[string]bool{
 	"metric":        {"label": true, "value": true, "align": true, "case": true, "padding": true, "tone": true},
 	"field":         {"key": true, "label": true, "unit": true, "fallback": true, "align": true, "case": true, "padding": true, "tone": true},
 	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
-	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animation-curve": true, "animation-repeat": true, "animate": true, "duration-ms": true, "easing": true, "foreground": true, "background": true, "border-color": true, "foreground-gradient": true, "border-gradient": true},
+	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animation-curve": true, "animation-repeat": true, "animation-delay-ms": true, "animation-direction": true, "animate": true, "duration-ms": true, "easing": true, "foreground": true, "background": true, "border-color": true, "foreground-gradient": true, "border-gradient": true},
 	"divider":       {"variant": true},
 	"button":        {"border": true, "label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true, "foreground": true, "background": true, "foreground-gradient": true},
 	"link":          {"border": true, "label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
@@ -46,15 +46,26 @@ func validateStyleAttribute(key, value string) error {
 	switch key {
 	case "animate":
 		switch value {
-		case "pulse", "sweep", "fade", "keyframes":
+		case "pulse", "sweep", "fade", "keyframes", "color-keyframes":
 			return nil
 		}
 	case "animation-curve":
 		if _, err := parseBrightnessCurve(value); err == nil {
 			return nil
 		}
+		if _, _, err := parseColorCurve(value); err == nil {
+			return nil
+		}
 	case "animation-repeat":
-		if value == "1" || value == "infinite" {
+		if validAnimationRepeat(value) {
+			return nil
+		}
+	case "animation-delay-ms":
+		if validAnimationDelay(value) {
+			return nil
+		}
+	case "animation-direction":
+		if validAnimationDirection(value) {
 			return nil
 		}
 	case "duration-ms":
