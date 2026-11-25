@@ -10,6 +10,60 @@ type cssCompoundRule struct {
 	id      string
 	classes []string
 	attr    map[string]string
+	state   string
+	parents []cssCompoundRule
+	direct  []bool
+}
+
+// parseContextSelector supports at most four simple selector segments.
+func parseContextSelector(selector string) (cssCompoundRule, error) {
+	parts := strings.Fields(strings.ReplaceAll(selector, ">", " > "))
+	var segments []cssCompoundRule
+	var direct []bool
+	nextDirect := false
+	for _, part := range parts {
+		if part == ">" {
+			if len(segments) == 0 || nextDirect {
+				return cssCompoundRule{}, fmt.Errorf("invalid child combinator")
+			}
+			nextDirect = true
+			continue
+		}
+		if len(segments) >= 4 {
+			return cssCompoundRule{}, fmt.Errorf("selector chain exceeds four segments")
+		}
+		base, state, hasState := strings.Cut(part, ":")
+		var segment cssCompoundRule
+		var err error
+		if styleTargets[base] {
+			segment.kind = base
+		} else {
+			segment, err = parseCompoundSelector(base)
+			if err != nil {
+				return segment, err
+			}
+		}
+		if hasState {
+			if _, _, err := cssStateSelector(segment.kind + ":" + state); err != nil {
+				return segment, err
+			}
+			segment.state = state
+		}
+		if len(segments) > 0 {
+			if segments[len(segments)-1].state != "" {
+				return segment, fmt.Errorf("pseudo-selector must be on final control")
+			}
+			direct = append(direct, nextDirect)
+		}
+		segments = append(segments, segment)
+		nextDirect = false
+	}
+	if len(segments) == 0 || nextDirect {
+		return cssCompoundRule{}, fmt.Errorf("invalid contextual selector")
+	}
+	last := segments[len(segments)-1]
+	last.parents, last.direct = segments[:len(segments)-1], direct
+	return last, nil
 }
 
 func parseCompoundSelector(selector string) (cssCompoundRule, error) {
@@ -60,12 +114,18 @@ func parseCompoundSelector(selector string) (cssCompoundRule, error) {
 }
 
 func (r cssCompoundRule) specificity() int {
-	score := len(r.classes) * 10
-	if r.id != "" {
+	score := len(r.classes) * 100
+	if r.state != "" {
 		score += 100
+	}
+	if r.id != "" {
+		score += 10000
 	}
 	if r.kind != "" {
 		score++
+	}
+	for _, parent := range r.parents {
+		score += parent.specificity()
 	}
 	return score
 }
@@ -90,9 +150,48 @@ func (r cssCompoundRule) matches(n Node, classes []string) bool {
 	return true
 }
 
+type cssAncestor struct {
+	node    Node
+	classes []string
+}
+
+// Match the source tree, not expanded component call-site ancestry.
+// Dynamic programming avoids exponential descendant backtracking.
+func (r cssCompoundRule) matchesContext(n Node, classes []string, ancestors []cssAncestor) bool {
+	if !r.matches(n, classes) {
+		return false
+	}
+	if len(r.parents) == 0 {
+		return true
+	}
+	chain := append(append([]cssCompoundRule(nil), r.parents...), r)
+	nodes := append(append([]cssAncestor(nil), ancestors...), cssAncestor{n, classes})
+	var previous []bool
+	for i, selector := range chain {
+		current := make([]bool, len(nodes))
+		seen := false
+		for j, item := range nodes {
+			eligible := i == 0
+			if i > 0 && j > 0 {
+				seen = seen || previous[j-1]
+				eligible = seen
+				if r.direct[i-1] {
+					eligible = previous[j-1]
+				}
+			}
+			current[j] = eligible && selector.matches(item.node, item.classes)
+		}
+		previous = current
+	}
+	return previous[len(nodes)-1]
+}
+
 func validateCompoundRules(styles *assetStyles) error {
 	for _, rule := range styles.Compound {
 		for key, value := range rule.attr {
+			if rule.state != "" && key != "foreground" && key != "background" && key != "border-color" {
+				return fmt.Errorf("contextual state cannot change %s", key)
+			}
 			if rule.kind != "" {
 				if layoutStyleAttribute(key) && !layoutStyleTarget(rule.kind, key) {
 					return fmt.Errorf("unsupported compound layout property %q on %s", key, rule.kind)
@@ -113,10 +212,10 @@ func validateCompoundRules(styles *assetStyles) error {
 
 // Keep the legacy class-order cascade. Compound selectors are a separate,
 // higher-specificity layer; explicit markup remains the final override.
-func (s *assetStyles) compoundAttrs(n Node, classes []string, merged map[string]string) error {
+func (s *assetStyles) compoundAttrs(n Node, classes []string, ancestors []cssAncestor, merged map[string]string) error {
 	scores := make(map[string]int)
 	for _, rule := range s.Compound {
-		if !rule.matches(n, classes) {
+		if rule.state != "" || !rule.matchesContext(n, classes, ancestors) {
 			continue
 		}
 		score := rule.specificity()
@@ -135,11 +234,33 @@ func (s *assetStyles) compoundAttrs(n Node, classes []string, merged map[string]
 
 func (s *assetStyles) hasCompoundClass(name string) bool {
 	for _, rule := range s.Compound {
-		for _, class := range rule.classes {
-			if name == class {
-				return true
+		for _, segment := range append(append([]cssCompoundRule(nil), rule.parents...), rule) {
+			for _, class := range segment.classes {
+				if name == class {
+					return true
+				}
 			}
 		}
 	}
 	return false
+}
+
+func (s *assetStyles) contextualState(n Node, classes []string, ancestors []cssAncestor, state string) cssStatePaint {
+	attrs := make(map[string]string)
+	for key, value := range s.States[n.Kind+":"+state] {
+		attrs[key] = value
+	}
+	scores := make(map[string]int)
+	for _, rule := range s.Compound {
+		if rule.state != state || !rule.matchesContext(n, classes, ancestors) {
+			continue
+		}
+		for key, value := range rule.attr {
+			if score, ok := scores[key]; !ok || rule.specificity() >= score {
+				attrs[key] = value
+				scores[key] = rule.specificity()
+			}
+		}
+	}
+	return cssStatePaint{Foreground: attrs["foreground"], Background: attrs["background"], BorderColor: attrs["border-color"]}
 }
