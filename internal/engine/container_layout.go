@@ -32,10 +32,10 @@ func validateLayoutStyleValue(key, value string) error {
 	switch key {
 	case "position":
 		switch value {
-		case "static", "relative", "absolute":
+		case "static", "relative", "absolute", "sticky":
 			return nil
 		}
-		return fmt.Errorf("position requires static, relative or absolute")
+		return fmt.Errorf("position requires static, relative, absolute or sticky")
 	case "overflow":
 		switch value {
 		case "visible", "hidden", "auto":
