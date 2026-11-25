@@ -264,6 +264,7 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		if err != nil {
 			return result, err
 		}
+		child = clipBoxViewport(n, values, child)
 		result.lines = boxLines(child.lines, childWidth, left)
 		offsetBlock(&result, child, left, 0)
 	case "column", "component", "screen":
