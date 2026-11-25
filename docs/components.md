@@ -367,8 +367,7 @@ table {
 The animation shorthand accepts an existing effect (`pulse`, `sweep`,
 `fade`) or a defined keyframe name, a duration (250ms–10s), an optional
 easing (`linear`, `ease-in`, `ease-out`, `ease-in-out`), and an optional
-iteration value (`1` or `infinite`). Custom keyframes currently interpolate
-brightness only; they require 0% and 100% endpoints, at most eight stops,
+iteration value (`1`–`100` or `infinite`). Brightness keyframes interpolate brightness; they require 0% and 100% endpoints, at most eight stops,
 and brightness values of 30–100%. They cannot change geometry, visibility,
 or action metadata. Only panels and tables support animation.
 
@@ -692,5 +691,46 @@ SML performs deterministic RGB interpolation without changing glyphs,
 bounds, hit targets or bindings. There is no internal timer or retained
 transition state. Hosts that interrupt a running transition should
 manage their own timing; this API interpolates between state endpoints,
-not arbitrary in-flight colors. Layout transitions, transition lists,
-and general color keyframes are not yet supported.
+not arbitrary in-flight colors. Layout transitions and transition lists are not yet supported. Color
+keyframes are described below.
+
+### RGB keyframes and playback controls
+
+```css
+@keyframes aurora {
+    from { border-color: #67D9A5; }
+    50%  { border-color: #627BFF; }
+    to   { border-color: #B56CFA; }
+}
+
+panel {
+    border: double;
+    border-color: #67D9A5;
+    animation: aurora 2s ease-in-out;
+    animation-delay: 250ms;
+    animation-iteration-count: 4;
+    animation-direction: alternate;
+}
+```
+
+Each animation can interpolate one property: brightness, foreground
+(`color`), background (`background-color`), border-color or glow-color.
+RGB keyframes use explicit six-digit hex colors and two to eight distinct
+stops including 0% and 100%. All stops in a track must animate the same
+property. RGB interpolation is performed in the paint stage without
+altering frame geometry or hotspots.
+
+Playback options apply to built-in effects and custom keyframes:
+
+- `animation-delay`: 0ms–10s.
+- `animation-iteration-count`: 1–100 or infinite. Specify either this
+  property or the iteration field of the animation shorthand, not both.
+- `animation-direction`: normal, reverse, alternate, alternate-reverse.
+
+Cycle boundaries and finite final endpoints are preserved exactly;
+intermediate frames are quantized to the existing 12 FPS cadence.
+Before the delay, RGB keyframes retain static styles. No-color and
+reduced-motion modes do not animate. Host-provided phase and redraw
+scheduling remain required. Multiple concurrent animation tracks,
+named CSS colors, transform animations and arbitrary geometry
+keyframes are not implemented.
