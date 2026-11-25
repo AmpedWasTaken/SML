@@ -412,26 +412,25 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		if err != nil {
 			return result, err
 		}
-		result.lines = stylePanel(n, child.lines, interpolate(n.Attr("title", ""), values), width)
+		title := interpolate(n.Attr("title", ""), values)
+		result.lines = stylePanel(n, child.lines, title, width)
 		offsetX, offsetY := 1+padding, 1+max(0, padding-1)
 		if noBorder {
 			offsetX = padding
 			offsetY = 0
-			if n.Attr("title", "") != "" {
+			if title != "" {
 				offsetY++
 			}
 		}
+		align := n.Attr("align", "left")
+		if noBorder {
+			align = "left"
+		}
 		for _, spot := range child.spots {
-			if !noBorder && n.Attr("align", "left") != "left" && spot.Line < len(child.lines) {
-				slack := max(0, innerWidth-CellWidth(child.lines[spot.Line]))
-				if n.Attr("align", "") == "center" {
-					spot.Start += slack / 2
-					spot.End += slack / 2
-				}
-				if n.Attr("align", "") == "right" {
-					spot.Start += slack
-					spot.End += slack
-				}
+			if spot.Line >= 0 && spot.Line < len(child.lines) {
+				shift := panelLineShift(child.lines[spot.Line], innerWidth, align)
+				spot.Start += shift
+				spot.End += shift
 			}
 			// The nested renderer must use >=12 columns, but a narrow panel
 			// with padding 2..3 can display fewer. Clip the actionable area
@@ -448,8 +447,13 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 			result.spots = append(result.spots, spot)
 		}
 		for _, el := range child.elements {
-			el.Bounds.X += offsetX
-			el.Bounds.Y += offsetY
+			bounds, visible := panelVisibleBounds(el.Bounds, child.lines, innerWidth, align)
+			if !visible {
+				continue
+			}
+			bounds.X += offsetX
+			bounds.Y += offsetY
+			el.Bounds = bounds
 			result.elements = append(result.elements, el)
 		}
 	case "section":
