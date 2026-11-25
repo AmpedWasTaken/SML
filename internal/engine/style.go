@@ -11,7 +11,7 @@ import (
 var styleAttributes = map[string]bool{
 	"border": true, "padding": true, "align": true, "case": true,
 	"variant": true, "tone": true, "glow": true, "glow-color": true, "accent": true,
-	"animate": true, "duration-ms": true, "easing": true,
+	"animate": true, "duration-ms": true, "easing": true, "animation-curve": true, "animation-repeat": true,
 	"foreground": true, "background": true, "border-color": true,
 	"foreground-gradient": true, "border-gradient": true, "appearance": true,
 }
@@ -19,7 +19,7 @@ var styleTargets = map[string]bool{
 	"text": true, "badge": true, "alert": true, "metric": true,
 	"field": true, "section": true, "panel": true, "table": true, "divider": true,
 	"button": true, "link": true, "plugin-action": true, "input": true, "box": true,
-	"toggle": true, "choice": true, "number": true,
+	"toggle": true, "choice": true, "number": true, "row": true, "grid": true,
 }
 
 // Each visual element accepts only attributes used by its actual renderer.
@@ -31,7 +31,7 @@ var inlineProps = map[string]map[string]bool{
 	"metric":        {"label": true, "value": true, "align": true, "case": true, "padding": true, "tone": true},
 	"field":         {"key": true, "label": true, "unit": true, "fallback": true, "align": true, "case": true, "padding": true, "tone": true},
 	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
-	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animate": true, "duration-ms": true, "easing": true, "foreground": true, "background": true, "border-color": true, "foreground-gradient": true, "border-gradient": true},
+	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animation-curve": true, "animation-repeat": true, "animate": true, "duration-ms": true, "easing": true, "foreground": true, "background": true, "border-color": true, "foreground-gradient": true, "border-gradient": true},
 	"divider":       {"variant": true},
 	"button":        {"border": true, "label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true, "foreground": true, "background": true, "foreground-gradient": true},
 	"link":          {"border": true, "label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
@@ -44,6 +44,16 @@ func validHexColor(v string) bool { return glowColorPattern.MatchString(v) }
 
 func validateStyleAttribute(key, value string) error {
 	switch key {
+	case "animate":
+		switch value { case "pulse", "sweep", "fade", "keyframes": return nil }
+	case "animation-curve":
+		if _, err := parseBrightnessCurve(value); err == nil { return nil }
+	case "animation-repeat":
+		if value == "1" || value == "infinite" { return nil }
+	case "duration-ms":
+		if n := boundedInt(value, -1, -1, 10001); n >= 250 && n <= 10000 { return nil }
+	case "easing":
+		switch value { case "linear", "ease-in", "ease-out", "ease-in-out": return nil }
 	case "glow":
 		switch value {
 		case "none", "soft", "medium", "strong":
@@ -112,6 +122,7 @@ func validateStyleSystem(nodes []Node) error {
 					}
 				}
 			}
+			if err := validateContainerLayout(node); err != nil { return err }
 			if err := validateAnimation(node); err != nil {
 				return err
 			}
