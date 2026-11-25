@@ -29,21 +29,23 @@ type Element struct {
 	Bounds       Rect
 	// Presentation-only SML metadata. The base frame stays plain text;
 	// clients opt into ANSI colors through PaintGlowFrame.
-	Glow            string
-	GlowColor       string
-	Accent          string
-	HeaderStyle     string
-	RowStyle        string
-	Animation       string
-	AnimationCurve  string
-	AnimationRepeat string
-	DurationMS      int
-	Easing          string
-	Foreground      string
-	Background      string
-	BorderColor     string
-	FGGradient      string
-	BorderGradient  string
+	Glow               string
+	GlowColor          string
+	Accent             string
+	HeaderStyle        string
+	RowStyle           string
+	Animation          string
+	AnimationCurve     string
+	AnimationRepeat    string
+	AnimationDelayMS   int
+	AnimationDirection string
+	DurationMS         int
+	Easing             string
+	Foreground         string
+	Background         string
+	BorderColor        string
+	FGGradient         string
+	BorderGradient     string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -166,7 +168,7 @@ func (out *layoutBlock) mark(n Node, id string, width int) {
 		Accent: n.Attr("accent", ""), HeaderStyle: n.Attr("header-style", "default"), RowStyle: n.Attr("row-style", "plain"),
 		Foreground: n.Attr("foreground", ""), Background: n.Attr("background", ""), BorderColor: n.Attr("border-color", ""),
 		FGGradient: n.Attr("foreground-gradient", ""), BorderGradient: n.Attr("border-gradient", ""),
-		Animation: n.Attr("animate", ""), AnimationCurve: n.Attr("animation-curve", ""), AnimationRepeat: n.Attr("animation-repeat", ""), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
+		Animation: n.Attr("animate", ""), AnimationCurve: n.Attr("animation-curve", ""), AnimationRepeat: n.Attr("animation-repeat", ""), AnimationDelayMS: boundedInt(n.Attr("animation-delay-ms", "0"), 0, 0, 10000), AnimationDirection: n.Attr("animation-direction", "normal"), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
 	})
 }
 func controlNode(n Node) bool {
