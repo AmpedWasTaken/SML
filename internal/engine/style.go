@@ -45,15 +45,27 @@ func validHexColor(v string) bool { return glowColorPattern.MatchString(v) }
 func validateStyleAttribute(key, value string) error {
 	switch key {
 	case "animate":
-		switch value { case "pulse", "sweep", "fade", "keyframes": return nil }
+		switch value {
+		case "pulse", "sweep", "fade", "keyframes":
+			return nil
+		}
 	case "animation-curve":
-		if _, err := parseBrightnessCurve(value); err == nil { return nil }
+		if _, err := parseBrightnessCurve(value); err == nil {
+			return nil
+		}
 	case "animation-repeat":
-		if value == "1" || value == "infinite" { return nil }
+		if value == "1" || value == "infinite" {
+			return nil
+		}
 	case "duration-ms":
-		if n := boundedInt(value, -1, -1, 10001); n >= 250 && n <= 10000 { return nil }
+		if n := boundedInt(value, -1, -1, 10001); n >= 250 && n <= 10000 {
+			return nil
+		}
 	case "easing":
-		switch value { case "linear", "ease-in", "ease-out", "ease-in-out": return nil }
+		switch value {
+		case "linear", "ease-in", "ease-out", "ease-in-out":
+			return nil
+		}
 	case "glow":
 		switch value {
 		case "none", "soft", "medium", "strong":
@@ -122,7 +134,9 @@ func validateStyleSystem(nodes []Node) error {
 					}
 				}
 			}
-			if err := validateContainerLayout(node); err != nil { return err }
+			if err := validateContainerLayout(node); err != nil {
+				return err
+			}
 			if err := validateAnimation(node); err != nil {
 				return err
 			}

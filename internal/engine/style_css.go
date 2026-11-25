@@ -15,14 +15,14 @@ func cssBlock(source string) (head, body, tail string, err error) {
 		return "", "", "", fmt.Errorf("SMLCSS rule requires opening brace")
 	}
 	depth := 1
-	for i := open+1; i < len(source); i++ {
+	for i := open + 1; i < len(source); i++ {
 		switch source[i] {
 		case '{':
 			depth++
 		case '}':
 			depth--
 			if depth == 0 {
-				return strings.TrimSpace(source[:open]), source[open+1:i], source[i+1:], nil
+				return strings.TrimSpace(source[:open]), source[open+1 : i], source[i+1:], nil
 			}
 		}
 		if depth > 2 {
@@ -63,9 +63,10 @@ func cssDeclarations(body string) (map[string]string, error) {
 
 func parseStyleCSS(source string) (assetStyles, error) {
 	out := assetStyles{
-		Tokens: map[string]string{},
-		Classes: map[string]map[string]string{},
+		Tokens:   map[string]string{},
+		Classes:  map[string]map[string]string{},
 		Defaults: map[string]map[string]string{},
+		States:   map[string]map[string]string{},
 	}
 	if !utf8.ValidString(source) || len(source) > maxFileSize {
 		return out, fmt.Errorf("invalid SMLCSS size or UTF-8")
@@ -91,6 +92,17 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			return out, err
 		}
 		source = tail
+		if strings.HasPrefix(selector, "@media ") {
+			media, err := parseCSSMedia(selector, body)
+			if err != nil {
+				return out, err
+			}
+			out.Media = append(out.Media, media...)
+			if len(out.Media) > 128 {
+				return out, fmt.Errorf("too many SMLCSS media rules")
+			}
+			continue
+		}
 		if strings.HasPrefix(selector, "@keyframes ") {
 			name := strings.TrimSpace(strings.TrimPrefix(selector, "@keyframes "))
 			if !validName.MatchString(name) || keyframes[name] != "" || len(keyframes) >= 32 || name == "pulse" || name == "sweep" || name == "fade" {
@@ -123,7 +135,15 @@ func parseStyleCSS(source string) (assetStyles, error) {
 		for _, part := range selectors {
 			part = strings.TrimSpace(part)
 			var target map[string]string
-			if strings.HasPrefix(part, ".") {
+			if strings.Contains(part, ":") {
+				if _, _, err := cssStateSelector(part); err != nil {
+					return out, err
+				}
+				if out.States[part] == nil {
+					out.States[part] = map[string]string{}
+				}
+				target = out.States[part]
+			} else if strings.HasPrefix(part, ".") {
 				name := part[1:]
 				if !validName.MatchString(name) {
 					return out, fmt.Errorf("invalid SMLCSS class %q", part)
@@ -146,11 +166,16 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			}
 		}
 	}
-	for _, group := range []map[string]map[string]string{out.Classes, out.Defaults} {
+	for _, group := range []map[string]map[string]string{out.Classes, out.Defaults, out.States} {
 		for _, attrs := range group {
 			if err := normalizeCSS(attrs, out.Tokens, keyframes); err != nil {
 				return out, err
 			}
+		}
+	}
+	for _, rule := range out.Media {
+		if err := normalizeCSS(rule.attr, out.Tokens, keyframes); err != nil {
+			return out, err
 		}
 	}
 	return out, nil
@@ -158,7 +183,7 @@ func parseStyleCSS(source string) (assetStyles, error) {
 
 // normalizeCSS maps familiar CSS spellings onto validated engine attributes.
 func normalizeCSS(attrs, tokens, keyframes map[string]string) error {
-	alias := map[string]string{"color":"foreground", "background-color":"background", "text-align":"align", "text-transform":"case", "column-gap":"gap"}
+	alias := map[string]string{"color": "foreground", "background-color": "background", "text-align": "align", "text-transform": "case", "column-gap": "gap"}
 	for old, next := range alias {
 		if v, ok := attrs[old]; ok {
 			if _, exists := attrs[next]; exists {
@@ -166,53 +191,76 @@ func normalizeCSS(attrs, tokens, keyframes map[string]string) error {
 			}
 			delete(attrs, old)
 			if old == "text-transform" {
-				switch v { case "uppercase": v = "upper"; case "lowercase": v = "lower" }
+				switch v {
+				case "uppercase":
+					v = "upper"
+				case "lowercase":
+					v = "lower"
+				}
 			}
 			attrs[next] = v
 		}
 	}
 	if value, ok := attrs["grid-template-columns"]; ok {
-		if _, exists := attrs["columns"]; exists { return fmt.Errorf("grid-template-columns conflicts with columns") }
-		if _, exists := attrs["weights"]; exists { return fmt.Errorf("grid-template-columns conflicts with weights") }
-		if strings.HasPrefix(value, "@") { value = tokens[value[1:]] }
+		if _, exists := attrs["columns"]; exists {
+			return fmt.Errorf("grid-template-columns conflicts with columns")
+		}
+		if _, exists := attrs["weights"]; exists {
+			return fmt.Errorf("grid-template-columns conflicts with weights")
+		}
+		if strings.HasPrefix(value, "@") {
+			value = tokens[value[1:]]
+		}
 		parts := strings.Fields(value)
-		if len(parts) < 1 || len(parts) > 8 { return fmt.Errorf("grid-template-columns requires 1..8 fr tracks") }
+		if len(parts) < 1 || len(parts) > 8 {
+			return fmt.Errorf("grid-template-columns requires 1..8 fr tracks")
+		}
 		weights := make([]string, len(parts))
 		for i, part := range parts {
-			weight, err := strconv.Atoi(strings.TrimSuffix(part,"fr"))
-			if err != nil || !strings.HasSuffix(part,"fr") || weight < 1 || weight > 16 {
+			weight, err := strconv.Atoi(strings.TrimSuffix(part, "fr"))
+			if err != nil || !strings.HasSuffix(part, "fr") || weight < 1 || weight > 16 {
 				return fmt.Errorf("grid tracks must be 1fr..16fr")
 			}
 			weights[i] = strconv.Itoa(weight)
 		}
-		delete(attrs,"grid-template-columns")
+		delete(attrs, "grid-template-columns")
 		attrs["columns"] = strconv.Itoa(len(weights))
-		attrs["weights"] = strings.Join(weights,",")
+		attrs["weights"] = strings.Join(weights, ",")
 	}
 	if value, ok := attrs["animation"]; ok {
-		if strings.HasPrefix(value, "@") { value = tokens[value[1:]] }
+		if strings.HasPrefix(value, "@") {
+			value = tokens[value[1:]]
+		}
 		parts := strings.Fields(value)
 		if len(parts) < 2 || len(parts) > 4 {
 			return fmt.Errorf("animation requires name duration [easing] [iteration]")
 		}
-		for _, key := range []string{"animate","duration-ms","easing","animation-curve","animation-repeat"} {
-			if _, exists := attrs[key]; exists { return fmt.Errorf("animation conflicts with %s",key) }
+		for _, key := range []string{"animate", "duration-ms", "easing", "animation-curve", "animation-repeat"} {
+			if _, exists := attrs[key]; exists {
+				return fmt.Errorf("animation conflicts with %s", key)
+			}
 		}
 		ms, err := cssMilliseconds(parts[1])
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 		attrs["animate"], attrs["duration-ms"] = parts[0], strconv.Itoa(ms)
 		if curve := keyframes[parts[0]]; curve != "" {
 			attrs["animate"], attrs["animation-curve"] = "keyframes", curve
 		} else if parts[0] != "pulse" && parts[0] != "sweep" && parts[0] != "fade" {
-			return fmt.Errorf("unknown SMLCSS animation %q",parts[0])
+			return fmt.Errorf("unknown SMLCSS animation %q", parts[0])
 		}
-		if len(parts) >= 3 { attrs["easing"] = parts[2] }
-		if len(parts) == 4 { attrs["animation-repeat"] = parts[3] }
-		delete(attrs,"animation")
+		if len(parts) >= 3 {
+			attrs["easing"] = parts[2]
+		}
+		if len(parts) == 4 {
+			attrs["animation-repeat"] = parts[3]
+		}
+		delete(attrs, "animation")
 	}
-	for _, key := range []string{"width","min-width","max-width","gap","row-gap","collapse-below","padding"} {
+	for _, key := range []string{"width", "min-width", "max-width", "gap", "row-gap", "collapse-below", "padding", "flex-basis"} {
 		if v, ok := attrs[key]; ok {
-			attrs[key] = strings.TrimSuffix(v,"ch")
+			attrs[key] = strings.TrimSuffix(v, "ch")
 		}
 	}
 	return nil

@@ -58,7 +58,10 @@ func TestSMLCSSDefaultsClassesAndInline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, item := range []struct{ line int; prefix string }{{0,"╭"},{3,"╔"},{6,"+"},{9,"╭"},{12,"╔"}} {
+	for _, item := range []struct {
+		line   int
+		prefix string
+	}{{0, "╭"}, {3, "╔"}, {6, "+"}, {9, "╭"}, {12, "╔"}} {
 		if !strings.HasPrefix(frame.Lines[item.line], item.prefix) {
 			t.Fatalf("incorrect frame at %d: %q", item.line, frame.Lines)
 		}

@@ -138,6 +138,7 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		return nil, errors.New("SML nesting limit exceeded")
 	}
 	width = max(12, min(width, 240))
+	n = v.responsiveNode(n)
 	switch n.Kind {
 	case "gradient", "derive":
 		return nil, nil
@@ -181,7 +182,8 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		if err != nil {
 			return nil, err
 		}
-		return boxLines(lines, childWidth, left), nil
+		start, end := boxViewport(n, values, len(lines))
+		return boxLines(lines[start:end], childWidth, left), nil
 	case "screen", "component", "column":
 		return v.lines(n.Children, values, width, depth)
 	case "section":
@@ -261,6 +263,10 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		}
 		return v.node(part, values, width, depth+1)
 	case "row", "grid":
+		if n.Kind == "row" && n.Attr("display", "") == "flex" {
+			block, err := v.renderLayoutNode(n, values, width, depth, "legacy:flex")
+			return block.lines, err
+		}
 		if len(n.Children) == 0 {
 			return nil, nil
 		}
@@ -279,7 +285,9 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		subwidth := max(12, (width-gap*(columns-1))/columns)
 		out := []string{}
 		for i := 0; i < len(n.Children); i += columns {
-			if i > 0 { out = append(out, make([]string,boundedInt(n.Attr("row-gap","0"),0,0,8))...) }
+			if i > 0 {
+				out = append(out, make([]string, boundedInt(n.Attr("row-gap", "0"), 0, 0, 8))...)
+			}
 			count := min(columns, len(n.Children)-i)
 			groups := make([][]string, count)
 			maxrows := 0
@@ -298,9 +306,11 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 				for j, g := range groups {
 					value := ""
 					offset := 0
-					switch n.Attr("align-items","start") {
-					case "center": offset = (maxrows-len(g))/2
-					case "end": offset = maxrows-len(g)
+					switch n.Attr("align-items", "start") {
+					case "center":
+						offset = (maxrows - len(g)) / 2
+					case "end":
+						offset = maxrows - len(g)
 					}
 					if row >= offset && row-offset < len(g) {
 						value = g[row-offset]
@@ -414,6 +424,7 @@ func (v View) Render(values map[string]string) []string { return v.RenderWidth(v
 // RenderChecked returns rendered lines and any render-time error.
 // Unlike RenderWidth it does not convert errors to visible error text.
 func (v View) RenderChecked(values map[string]string, width int) ([]string, error) {
+	v.cssWidth = max(12, min(240, width))
 	return v.lines(v.Nodes, v.ResolveBindings(values), width, 0)
 }
 func (v View) RenderWidth(values map[string]string, width int) []string {

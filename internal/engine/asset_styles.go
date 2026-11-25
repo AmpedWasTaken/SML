@@ -14,6 +14,8 @@ import (
 // assetStyles is an optional shared, inert presentation stylesheet.
 // Classes may set only recognized visual attributes; never action metadata.
 type assetStyles struct {
+	States   map[string]map[string]string `json:"-"`
+	Media    []cssMediaRule               `json:"-"`
 	Tokens   map[string]string            `json:"tokens"`
 	Classes  map[string]map[string]string `json:"classes"`
 	Defaults map[string]map[string]string `json:"defaults"`
@@ -78,7 +80,9 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 			return nil, fmt.Errorf("styles.json: invalid defaults target %q", kind)
 		}
 		for key, value := range attrs {
-			if layoutStyleAttribute(key) && !layoutStyleTarget(kind,key) { return nil, fmt.Errorf("unsupported %s layout default %q",kind,key) }
+			if layoutStyleAttribute(key) && !layoutStyleTarget(kind, key) {
+				return nil, fmt.Errorf("unsupported %s layout default %q", kind, key)
+			}
 			if props, ok := inlineProps[kind]; ok && !props[key] {
 				return nil, fmt.Errorf("styles.json: unsupported %s default %q", kind, key)
 			}
@@ -94,6 +98,12 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 			}
 			attrs[key] = resolved
 		}
+	}
+	if err := validateCSSMedia(&styles); err != nil {
+		return nil, err
+	}
+	if err := validateCSSStates(&styles); err != nil {
+		return nil, err
 	}
 	return &styles, nil
 }
@@ -131,7 +141,9 @@ func (s *assetStyles) resolve(key, value string) (string, error) {
 		}
 	}
 	if layoutStyleAttribute(key) {
-		if err := validateLayoutStyleValue(key,value); err != nil { return "",err }
+		if err := validateLayoutStyleValue(key, value); err != nil {
+			return "", err
+		}
 	} else if err := validateStyleAttribute(key, value); err != nil {
 		return "", err
 	}
@@ -158,7 +170,9 @@ func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 					return fmt.Errorf("unknown SML style class %q", name)
 				}
 				for key, value := range attrs {
-					if layoutStyleAttribute(key) && !layoutStyleTarget(n.Kind,key) { return fmt.Errorf("layout property %q not supported on %s",key,n.Kind) }
+					if layoutStyleAttribute(key) && !layoutStyleTarget(n.Kind, key) {
+						return fmt.Errorf("layout property %q not supported on %s", key, n.Kind)
+					}
 					merged[key] = value
 				}
 			}
@@ -170,6 +184,12 @@ func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 			n.Attrs = merged
 		}
 		if styles != nil {
+			if len(styles.Media) > 0 && (n.Kind == "box" || n.Kind == "grid" || n.Kind == "row") {
+				n.cssFixed = make(map[string]bool, len(n.Attrs))
+				for key := range n.Attrs {
+					n.cssFixed[key] = true
+				}
+			}
 			for key, value := range styles.Defaults[n.Kind] {
 				if _, exists := n.Attrs[key]; !exists {
 					n.Attrs[key] = value

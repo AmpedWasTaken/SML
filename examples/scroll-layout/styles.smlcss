@@ -1,0 +1,8 @@
+.scroll-area {
+    overflow: auto;
+    max-height: 4;
+}
+
+panel {
+    border: round;
+}

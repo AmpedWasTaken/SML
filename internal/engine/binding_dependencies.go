@@ -96,6 +96,8 @@ func (v View) BindingDependencies() BindingDependencies {
 				// These elements read a binding key by attribute name, not
 				// by {{interpolation}}. This includes render and focus gates.
 				switch n.Kind {
+				case "box":
+					add(n.Attr("scroll-key", ""))
 				case "field", "toggle", "choice", "input", "number":
 					add(n.Attr("key", ""))
 				case "if", "when":

@@ -21,26 +21,28 @@ type Rect struct{ X, Y, Width, Height int }
 
 // Element records the layout bounds of a named view node.
 type Element struct {
-	ID     string
-	Kind   string
-	Bounds Rect
+	controlPaint cssControlPaint
+	disabled     bool
+	ID           string
+	Kind         string
+	Bounds       Rect
 	// Presentation-only SML metadata. The base frame stays plain text;
 	// clients opt into ANSI colors through PaintGlowFrame.
-	Glow           string
-	GlowColor      string
-	Accent         string
-	HeaderStyle    string
-	RowStyle       string
-	Animation      string
-	AnimationCurve string
+	Glow            string
+	GlowColor       string
+	Accent          string
+	HeaderStyle     string
+	RowStyle        string
+	Animation       string
+	AnimationCurve  string
 	AnimationRepeat string
-	DurationMS     int
-	Easing         string
-	Foreground     string
-	Background     string
-	BorderColor    string
-	FGGradient     string
-	BorderGradient string
+	DurationMS      int
+	Easing          string
+	Foreground      string
+	Background      string
+	BorderColor     string
+	FGGradient      string
+	BorderGradient  string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -243,6 +245,7 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		return layoutBlock{}, errors.New("SML layout depth exceeded")
 	}
 	width = max(12, min(240, width))
+	n = v.responsiveNode(n)
 	result := layoutBlock{}
 	id := n.Attr("id", path)
 	// Repeated component controls must get a stable, iteration-local identity.
@@ -261,6 +264,7 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		if err != nil {
 			return result, err
 		}
+		child = clipBoxViewport(n, values, child)
 		result.lines = boxLines(child.lines, childWidth, left)
 		offsetBlock(&result, child, left, 0)
 	case "column", "component", "screen":
@@ -353,6 +357,14 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 			}
 		}
 	case "row", "grid":
+		if n.Kind == "row" && n.Attr("display", "") == "flex" {
+			var err error
+			result, err = v.renderFlex(n, values, width, depth, path)
+			if err != nil {
+				return result, err
+			}
+			break
+		}
 		if len(n.Children) == 0 {
 			return result, nil
 		}
@@ -394,13 +406,17 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 				x += childWidth + gap
 			}
 			for i := range parts {
-				switch n.Attr("align-items","start") {
-				case "center": parts[i].y = (h-len(parts[i].block.lines))/2
-				case "end": parts[i].y = h-len(parts[i].block.lines)
+				switch n.Attr("align-items", "start") {
+				case "center":
+					parts[i].y = (h - len(parts[i].block.lines)) / 2
+				case "end":
+					parts[i].y = h - len(parts[i].block.lines)
 				}
 			}
 			rendered := renderCanvas(width, h, parts)
-			if start > 0 { result.lines = append(result.lines, make([]string, boundedInt(n.Attr("row-gap","0"),0,0,8))...) }
+			if start > 0 {
+				result.lines = append(result.lines, make([]string, boundedInt(n.Attr("row-gap", "0"), 0, 0, 8))...)
+			}
 			baseY := len(result.lines)
 			result.lines = append(result.lines, rendered...)
 			for _, part := range parts {
@@ -526,6 +542,11 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		return layoutBlock{}, errors.New("SML render output exceeds limit")
 	}
 	result.mark(n, id, width)
+	if controlNode(n) {
+		element := &result.elements[len(result.elements)-1]
+		element.controlPaint = v.controlPaint(n.Kind)
+		element.disabled = !controlEnabled(n, values)
+	}
 	if n.Kind == "box" {
 		childWidth, left := boxDimensions(n, width)
 		result.elements[len(result.elements)-1].Bounds.X = left
@@ -540,6 +561,7 @@ func (v View) RenderFrame(values map[string]string, width int) (Frame, error) {
 	if width < 12 || width > 240 {
 		return Frame{}, errors.New("SML frame width must be 12..240")
 	}
+	v.cssWidth = width
 	resolved := v.ResolveBindings(values)
 	block, err := v.renderLayoutNodes(v.Nodes, resolved, width, 0, "screen:"+v.Name)
 	if err != nil {

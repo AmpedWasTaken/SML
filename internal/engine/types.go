@@ -12,6 +12,7 @@ type Node struct {
 	Attrs    map[string]string
 	Text     string
 	Children []Node
+	cssFixed map[string]bool
 }
 
 func (n Node) Attr(key, fallback string) string {
@@ -27,6 +28,7 @@ type View struct {
 	assets     string
 	components map[string]Node
 	styles     *assetStyles
+	cssWidth   int
 }
 
 func (v View) WithAssets(dir string) View {

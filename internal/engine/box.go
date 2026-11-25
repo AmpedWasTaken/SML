@@ -11,8 +11,14 @@ func validateBox(n Node) error {
 	}
 	for key, value := range n.Attrs {
 		switch key {
-		case "width", "min-width", "max-width":
-			if err := validateLayoutStyleValue(key,value); err != nil { return err }
+		case "width", "min-width", "max-width", "flex-grow", "flex-basis", "flex-shrink", "max-height", "overflow":
+			if err := validateLayoutStyleValue(key, value); err != nil {
+				return err
+			}
+		case "scroll-key":
+			if err := validateBoxScrollKey(value); err != nil {
+				return err
+			}
 		case "align":
 			if err := validateStyleAttribute(key, value); err != nil {
 				return err
@@ -30,10 +36,10 @@ func validateBox(n Node) error {
 
 // The box is a bounded responsive container, not a fixed terminal size.
 func boxDimensions(n Node, available int) (width, left int) {
-	preferred := resolveBoxLength(n.Attr("width",""),available,available)
-	low := resolveBoxLength(n.Attr("min-width",""),available,12)
-	high := resolveBoxLength(n.Attr("max-width",""),available,available)
-	width = min(available,max(12,min(max(preferred,low),max(low,high))))
+	preferred := resolveBoxLength(n.Attr("width", ""), available, available)
+	low := resolveBoxLength(n.Attr("min-width", ""), available, 12)
+	high := resolveBoxLength(n.Attr("max-width", ""), available, available)
+	width = min(available, max(12, min(max(preferred, low), max(low, high))))
 	switch n.Attr("align", "left") {
 	case "center":
 		left = (available - width) / 2

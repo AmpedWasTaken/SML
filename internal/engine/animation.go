@@ -27,9 +27,15 @@ func validateAnimation(n Node) error {
 		return fmt.Errorf("unsupported animation %q", effect)
 	}
 	if effect == "keyframes" {
-		if _, err := parseBrightnessCurve(curve); err != nil { return err }
-	} else if hasCurve { return fmt.Errorf("animation-curve requires keyframes") }
-	if hasRepeat && repeat != "1" && repeat != "infinite" { return fmt.Errorf("animation-repeat must be 1 or infinite") }
+		if _, err := parseBrightnessCurve(curve); err != nil {
+			return err
+		}
+	} else if hasCurve {
+		return fmt.Errorf("animation-curve requires keyframes")
+	}
+	if hasRepeat && repeat != "1" && repeat != "infinite" {
+		return fmt.Errorf("animation-repeat must be 1 or infinite")
+	}
 	if hasDuration {
 		ms, err := strconv.Atoi(duration)
 		if err != nil || ms < 250 || ms > 10000 {
