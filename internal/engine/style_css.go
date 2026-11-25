@@ -135,7 +135,7 @@ func parseStyleCSS(source string) (assetStyles, error) {
 		for _, part := range selectors {
 			part = strings.TrimSpace(part)
 			var target map[string]string
-			if strings.ContainsAny(part, " >\t\n\r") || (strings.Contains(part, ":") && strings.ContainsAny(part, ".#")) {
+			if strings.ContainsAny(part, " >[\t\n\r") || (strings.Contains(part, ":") && strings.ContainsAny(part, ".#")) {
 				rule, err := parseContextSelector(part)
 				if err != nil {
 					return out, err
