@@ -20,8 +20,8 @@ func validateSessionInput(n Node) error {
 	}
 	for name := range n.Attrs {
 		switch name {
-		case "label", "key", "id", "placeholder", "min", "max":
-		case "appearance", "border", "foreground", "background", "border-color", "foreground-gradient", "border-gradient":
+		case "label", "key", "id", "placeholder", "min", "max", "border":
+		case "appearance", "foreground", "background", "border-color", "foreground-gradient", "border-gradient":
 			if n.Kind != "input" {
 				return fmt.Errorf("attribute %q requires input", name)
 			}
@@ -70,6 +70,9 @@ func renderSessionInput(n Node, values map[string]string, width int) string {
 	}
 	if utf8.RuneCountInString(v) > 64 {
 		v = string([]rune(v)[:64])
+	}
+	if hasControlBorder(n) {
+		return trim(n.Attr("label", "")+": "+safe(v), width)
 	}
 	return trim("[ "+n.Attr("label", "")+": "+safe(v)+" ]", width)
 }
