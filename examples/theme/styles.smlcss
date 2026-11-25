@@ -1,0 +1,19 @@
+/* Shared terminal theme */
+:root {
+    --edge: round;
+    --space: 1;
+}
+panel {
+    border: var(--edge);
+    padding: var(--space);
+}
+button { border: var(--edge); }
+link { border: var(--edge); }
+plugin-action { border: var(--edge); }
+input { border: var(--edge); }
+number { border: var(--edge); }
+choice { border: var(--edge); }
+toggle { border: var(--edge); }
+table { style: rounded; }
+.important { border: double; }
+.classic { border: ascii; }
