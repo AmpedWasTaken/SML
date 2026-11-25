@@ -557,3 +557,57 @@ respectively. Layout uses terminal cells, not browser pixels. The
 structural renderer maintains original child paths and translates
 element bounds and hitboxes for every wrapped line. This does not
 implement browser flex-wrap reverse, order, or arbitrary positioning.
+
+### Positioned layers
+
+A box with `position: relative` establishes a local coordinate system.
+Direct child boxes with `position: absolute` are removed from the normal
+vertical flow and painted over its ordinary children.
+
+```css
+.workspace {
+    position: relative;
+}
+
+.notice {
+    position: absolute;
+    left: 12ch;
+    top: 2;
+    width: 36ch;
+    z-index: 10;
+}
+```
+
+```xml
+<screen name="workspace" version="3">
+    <box class="workspace">
+        <panel title="Workspace">
+            <text>Preferences</text>
+            <text>Appearance</text>
+            <text>Accessibility</text>
+        </panel>
+        <box class="notice">
+            <panel title="Notification" border="double">
+                <text>Preferences saved</text>
+                <button label="Dismiss" action="notice.dismiss"/>
+            </panel>
+        </box>
+    </box>
+</screen>
+```
+
+Horizontal offsets are terminal cells (0–240), vertical offsets are rows
+(0–3000), and layer order is 0–100. Equal z-index values paint in source
+order, with the later box on top. A relative box supports up to 16 absolute
+children. The layer's horizontal origin is clamped to leave at least 12
+cells in narrow terminals, and output remains subject to the 3000-row limit.
+Overlays are opaque, including whitespace. A lower hotspot that intersects
+a higher layer is removed entirely; partially obscured lower element
+paint metadata is also omitted to prevent color leaking through overlays.
+Wide graphemes crossing a layer edge are cleared as whole clusters.
+
+This is a local compositing mechanism, not a complete browser stacking
+context implementation. Absolute positioning must be on a direct box
+child of a relative box; position properties cannot be altered by media
+queries. Fixed and sticky positioning, transparent layers, focus traps
+and host-managed modal navigation are not implemented.
