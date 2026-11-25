@@ -22,15 +22,17 @@ func (n Node) Attr(key, fallback string) string {
 }
 
 type View struct {
-	Name   string
-	Nodes  []Node
-	assets string
+	Name       string
+	Nodes      []Node
+	assets     string
 	components map[string]Node
+	styles     *assetStyles
 }
 
 func (v View) WithAssets(dir string) View {
 	if v.assets != dir {
 		v.components = nil
+		v.styles = nil
 	}
 	v.assets = dir
 	return v

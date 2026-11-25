@@ -106,7 +106,7 @@ func (v View) loadComponent(name string) (Node, error) {
 	wrapper = append(wrapper, []byte("<screen name=\"component\" version=\"3\">")...)
 	wrapper = append(wrapper, b...)
 	wrapper = append(wrapper, []byte("</screen>")...)
-	parsed, err := Parse(wrapper)
+	parsed, err := parseWithStyles(wrapper, v.styles)
 	if err != nil {
 		return Node{}, err
 	}

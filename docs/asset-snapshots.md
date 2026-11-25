@@ -16,3 +16,24 @@ action authorization remain host responsibilities.
 Validation reports the relative source file and, for XML syntax errors or
 unknown elements, the decoder line and column. Semantic diagnostics still
 use descriptive errors without exact node coordinates.
+
+## Shared design tokens and classes
+
+Optionally create `assets/styles.json`:
+
+```json
+{
+  "tokens": {"space": "1", "accent": "#aabbcc"},
+  "classes": {
+    "card": {"padding": "@space", "border": "round", "accent": "@accent"}
+  }
+}
+```
+
+A screen or component loaded through the asset loader can use
+`<panel class="card" title="Overview">...</panel>`. Classes are applied
+left to right; inline attributes override class defaults. Tokens may also
+be referenced directly in visual attributes. The usual node-level checks
+still apply. Actions, bindings and executable properties cannot be set
+by styles. Shared classes and tokens are available through asset loading;
+standalone Parse/ParseFile intentionally have no external stylesheet.

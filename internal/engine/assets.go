@@ -26,6 +26,10 @@ func LoadDir(dir string) (map[string]View, error) {
 	if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return nil, errors.New("SML views must be a real directory")
 	}
+	styles, err := loadAssetStyles(dir)
+	if err != nil {
+		return nil, err
+	}
 	views := map[string]View{}
 	sources := map[string]string{}
 	components := map[string]Node{}
@@ -58,7 +62,7 @@ func LoadDir(dir string) (map[string]View, error) {
 		if len(views) >= maxAssetViews {
 			return errors.New("too many SML views")
 		}
-		view, err := ParseFile(path)
+		view, err := parseFileWithStyles(path, styles)
 		if err != nil {
 			return fmt.Errorf("%s: %w", rel, err)
 		}

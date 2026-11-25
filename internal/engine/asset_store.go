@@ -10,11 +10,11 @@ import (
 // not watch files, perform terminal I/O, or change host action permissions.
 // Media remains host-managed and is not part of the markup snapshot.
 type AssetStore struct {
-	mu sync.RWMutex
+	mu       sync.RWMutex
 	reloadMu sync.Mutex
-	dir string
+	dir      string
 	required []string
-	views map[string]View
+	views    map[string]View
 	revision uint64
 }
 

@@ -59,6 +59,10 @@ func validateGridWeights(nodes []Node, version string) error {
 
 // Parse rejects invalid XML and unknown components before publishing a view.
 func Parse(data []byte) (View, error) {
+	return parseWithStyles(data, nil)
+}
+
+func parseWithStyles(data []byte, styles *assetStyles) (View, error) {
 	if len(data) > maxFileSize || !utf8.Valid(data) {
 		return View{}, errors.New("invalid SML size or UTF-8")
 	}
@@ -137,7 +141,10 @@ func Parse(data []byte) (View, error) {
 	if len(stack) != 0 {
 		return View{}, errors.New("incomplete SML XML")
 	}
-	view := View{Name: name, Nodes: root.Children}
+	if err := applyAssetStyles(root.Children, styles); err != nil {
+		return View{}, err
+	}
+	view := View{Name: name, Nodes: root.Children, styles: styles}
 	if version != "3" && requiresSML3(view.Nodes) {
 		return View{}, errors.New("reactive SML components require version 3")
 	}
