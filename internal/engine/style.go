@@ -219,6 +219,7 @@ func styleAction(n Node, label string, width int) string {
 	}
 	return trim(stylePad(n, label, width), width)
 }
+
 // framedControl keeps the label and the closing edge visible at narrow widths.
 func framedControl(n Node, label string, width int) []string {
 	border := styleBorder(n.Attr("border", "round"))
