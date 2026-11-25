@@ -873,3 +873,43 @@ inline precedence still applies.
 Inheritance is resolved during asset loading, not by dynamic render
 state. Interactive state selectors require explicit RGB colors.
 Layout values, gradients and arbitrary CSS properties cannot inherit.
+
+### Mathematical terminal sizing
+
+```css
+:root {
+    --workspace-width: clamp(20ch, 80%, 96ch);
+}
+
+.workspace {
+    width: var(--workspace-width);
+}
+
+.sidebar {
+    flex-basis: min(32ch, 30%);
+    min-width: max(14ch, 15%);
+}
+
+.content {
+    width: calc(100% - 4ch);
+}
+```
+
+The width, min-width, max-width and flex-basis properties accept bounded
+`calc()`, `min()`, `max()` and `clamp()` expressions. Percentage
+lengths use available parent columns, or available flex-line columns
+when evaluating flex basis. Cell lengths use integer `ch` units; bare
+zero is also accepted. Expressions support addition and subtraction,
+two to four arguments for min/max, and exactly three for clamp.
+
+Nested functions are limited to four levels and expressions to 64 bytes.
+Individual lengths must be 0–240 cells or 0–100%. Calculations preserve
+hundredths of a cell until the final truncation to whole columns.
+The resulting size is bounded to 12–240 cells before the existing
+box and flex layout constraints are applied. A small terminal may
+still take precedence over the requested minimum.
+
+These are terminal sizing expressions, not a general scripting engine.
+Multiplication, division, decimal literals, pixel units, embedded
+variable references and arbitrary expressions are not supported.
+Whole-value design tokens can contain a sizing expression.
