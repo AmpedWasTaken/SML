@@ -13,17 +13,23 @@ func validateAnimation(n Node) error {
 	effect, hasEffect := n.Attrs["animate"]
 	duration, hasDuration := n.Attrs["duration-ms"]
 	easing, hasEasing := n.Attrs["easing"]
-	if !hasEffect && !hasDuration && !hasEasing {
+	curve, hasCurve := n.Attrs["animation-curve"]
+	repeat, hasRepeat := n.Attrs["animation-repeat"]
+	if !hasEffect && !hasDuration && !hasEasing && !hasCurve && !hasRepeat {
 		return nil
 	}
 	if n.Kind != "panel" && n.Kind != "table" {
 		return fmt.Errorf("animation is supported only on panels and tables")
 	}
 	switch effect {
-	case "pulse", "sweep", "fade":
+	case "pulse", "sweep", "fade", "keyframes":
 	default:
 		return fmt.Errorf("unsupported animation %q", effect)
 	}
+	if effect == "keyframes" {
+		if _, err := parseBrightnessCurve(curve); err != nil { return err }
+	} else if hasCurve { return fmt.Errorf("animation-curve requires keyframes") }
+	if hasRepeat && repeat != "1" && repeat != "infinite" { return fmt.Errorf("animation-repeat must be 1 or infinite") }
 	if hasDuration {
 		ms, err := strconv.Atoi(duration)
 		if err != nil || ms < 250 || ms > 10000 {
@@ -61,12 +67,14 @@ func animationBrightness(e Element, phase time.Duration, base int, position floa
 	phase = max(0, phase)
 	phase = phase / (time.Second / 12) * (time.Second / 12)
 	progress := float64(phase%duration) / float64(duration)
-	if e.Animation == "fade" {
+	if e.AnimationRepeat == "1" || (e.Animation == "fade" && e.AnimationRepeat != "infinite") {
 		progress = min(1, float64(phase)/float64(duration))
 	}
 	progress = animationEase(progress, e.Easing)
 	var strength float64
 	switch e.Animation {
+	case "keyframes":
+		strength = keyframeStrength(e.AnimationCurve, progress)
 	case "fade":
 		strength = .45 + .55*progress
 	case "pulse":
