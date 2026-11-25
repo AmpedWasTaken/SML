@@ -23,9 +23,9 @@ type Rect struct{ X, Y, Width, Height int }
 type Element struct {
 	controlPaint cssControlPaint
 	disabled     bool
-	ID     string
-	Kind   string
-	Bounds Rect
+	ID           string
+	Kind         string
+	Bounds       Rect
 	// Presentation-only SML metadata. The base frame stays plain text;
 	// clients opt into ANSI colors through PaintGlowFrame.
 	Glow            string
