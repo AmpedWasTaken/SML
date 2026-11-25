@@ -14,6 +14,7 @@ import (
 // assetStyles is an optional shared, inert presentation stylesheet.
 // Classes may set only recognized visual attributes; never action metadata.
 type assetStyles struct {
+	Compound    []cssCompoundRule            `json:"-"`
 	Transitions map[string]cssTransition     `json:"-"`
 	States      map[string]map[string]string `json:"-"`
 	Media       []cssMediaRule               `json:"-"`
@@ -100,6 +101,9 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 			attrs[key] = resolved
 		}
 	}
+	if err := validateCompoundRules(&styles); err != nil {
+		return nil, err
+	}
 	if err := validateCSSMedia(&styles); err != nil {
 		return nil, err
 	}
@@ -156,18 +160,19 @@ func (s *assetStyles) resolve(key, value string) (string, error) {
 func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 	for i := range nodes {
 		n := &nodes[i]
-		if spec, ok := n.Attrs["class"]; ok {
+		spec, hasClass := n.Attrs["class"]
+		if hasClass || (styles != nil && len(styles.Compound) > 0 && styleTargets[n.Kind]) {
 			if !styleTargets[n.Kind] || styles == nil {
 				return fmt.Errorf("SML <%s> class requires a shared stylesheet and a visual element", n.Kind)
 			}
 			classes := strings.Fields(spec)
-			if len(classes) == 0 || len(classes) > 8 {
+			if (hasClass && len(classes) == 0) || len(classes) > 8 {
 				return errors.New("SML class requires 1..8 class names")
 			}
 			merged := map[string]string{}
 			for _, name := range classes {
 				attrs, ok := styles.Classes[name]
-				if !ok {
+				if !ok && !styles.hasCompoundClass(name) {
 					return fmt.Errorf("unknown SML style class %q", name)
 				}
 				for key, value := range attrs {
@@ -176,6 +181,9 @@ func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 					}
 					merged[key] = value
 				}
+			}
+			if err := styles.compoundAttrs(*n, classes, merged); err != nil {
+				return err
 			}
 			for key, value := range n.Attrs {
 				if key != "class" {
