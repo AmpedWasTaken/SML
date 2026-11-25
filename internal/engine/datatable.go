@@ -26,7 +26,7 @@ func validateTable(n Node) error {
 	if n.Kind != "table" {
 		return nil
 	}
-	allowed := map[string]bool{"source": true, "style": true, "page": true, "page-size": true, "sort": true, "order": true, "filter": true, "empty": true, "glow": true, "glow-color": true, "accent": true, "header-style": true, "row-style": true, "animate": true, "duration-ms": true, "easing": true}
+	allowed := map[string]bool{"source": true, "style": true, "page": true, "page-size": true, "sort": true, "order": true, "filter": true, "empty": true, "glow": true, "glow-color": true, "accent": true, "header-style": true, "row-style": true, "animate": true, "duration-ms": true, "easing": true, "animation-curve": true, "animation-repeat": true}
 	for k := range n.Attrs {
 		if !allowed[k] {
 			return fmt.Errorf("unknown table attribute %q", k)
