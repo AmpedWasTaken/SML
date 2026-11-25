@@ -38,3 +38,6 @@ appearance entitlement; it grants no other permissions. No plugin executable,
 real telemetry or additional host command is involved. The Sentinel integration
 currently uses a source snapshot of the SML package until a compatible SML module
 revision can be pinned. The library is not a new native SML XML tag.
+
+The Motion route uses `state.pw_widget_motion` for the selected widget;
+`state.pw_motion` is reserved for the Animated/Static preference.

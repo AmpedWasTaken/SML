@@ -21,6 +21,10 @@ func validateSessionInput(n Node) error {
 	for name := range n.Attrs {
 		switch name {
 		case "label", "key", "id", "placeholder", "min", "max":
+		case "appearance", "border", "foreground", "background", "border-color", "foreground-gradient", "border-gradient":
+			if n.Kind != "input" {
+				return fmt.Errorf("attribute %q requires input", name)
+			}
 		default:
 			return fmt.Errorf("unsupported SML input attribute %q", name)
 		}
@@ -32,6 +36,12 @@ func validateSessionInput(n Node) error {
 		return errors.New("unsafe SML input placeholder")
 	}
 	if n.Kind == "input" {
+		if appearance := n.Attr("appearance", "inline"); appearance != "inline" && appearance != "boxed" {
+			return errors.New("SML input appearance must be inline or boxed")
+		}
+		if border := n.Attr("border", "round"); n.Attr("appearance", "") == "boxed" && border == "none" {
+			return errors.New("boxed SML input requires a visible border")
+		}
 		if _, ok := n.Attrs["min"]; ok {
 			return errors.New("min is only supported on number")
 		}
@@ -62,4 +72,20 @@ func renderSessionInput(n Node, values map[string]string, width int) string {
 		v = string([]rune(v)[:64])
 	}
 	return trim("[ "+n.Attr("label", "")+": "+safe(v)+" ]", width)
+}
+
+func renderBoxedInput(n Node, values map[string]string, width int) []string {
+	border := styleBorder(n.Attr("border", "round"))
+	value := values[n.Attr("key", "")]
+	if value == "" {
+		value = n.Attr("placeholder", "")
+	}
+	value = safe(strings.NewReplacer("\n", " ", "\r", " ", "\t", " ").Replace(value))
+	inner := max(0, width-2)
+	rule := strings.Repeat(border.h, inner)
+	return []string{
+		border.tl + rule + border.tr,
+		border.v + PadCells(value, inner) + border.v,
+		border.bl + rule + border.br,
+	}
 }

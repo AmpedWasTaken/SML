@@ -75,7 +75,7 @@ func TestGalleryEveryWidgetAndViewport(t *testing.T) {
 	for _, d := range Catalog() {
 		route := strings.ToLower(d.Category)
 		for _, width := range []int{24, 40, 80, 120} {
-			state := map[string]string{"state.pw_" + route: d.ID, "state.pw_motion": "Static"}
+			state := map[string]string{widgetSelectionKey(route): d.ID, "state.pw_motion": "Static"}
 			v, bindings, animated, err := Gallery(route, width, time.Second, state)
 			if err != nil || animated {
 				t.Fatalf("%s: %v, animated=%t", d.ID, err, animated)
@@ -91,5 +91,21 @@ func TestGalleryEveryWidgetAndViewport(t *testing.T) {
 	}
 	if _, _, _, err := Gallery("unknown", 80, 0, nil); err == nil {
 		t.Fatal("unknown gallery accepted")
+	}
+}
+
+func TestMotionRouteSelectionIndependentOfReducedMotion(t *testing.T) {
+	for _, mode := range []string{"Static", "Animated"} {
+		state := map[string]string{"state.pw_widget_motion": "pulse-beacon", "state.pw_motion": mode}
+		_, bindings, animated, err := Gallery("motion", 80, time.Second, state)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if animated != (mode == "Animated") || bindings["state.pw_motion"] != mode || bindings["state.pw_widget_motion"] != "pulse-beacon" {
+			t.Fatalf("motion selection and preference collided: %v, animated=%t", bindings, animated)
+		}
+		if !strings.Contains(bindings["preview.line1"], "Pulse Beacon") {
+			t.Fatal("selected motion widget not rendered")
+		}
 	}
 }

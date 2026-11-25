@@ -64,6 +64,17 @@ func pad(s string, w int) string {
 	return PadCells(s, w)
 }
 func (v View) component(name string) (Node, error) {
+	if v.components != nil {
+		part, ok := v.components[name]
+		if !ok {
+			return Node{}, fmt.Errorf("SML component %q is not in the asset snapshot", name)
+		}
+		return part, nil
+	}
+	return v.loadComponent(name)
+}
+
+func (v View) loadComponent(name string) (Node, error) {
 	if !validName.MatchString(name) {
 		return Node{}, errors.New("invalid SML include name")
 	}
@@ -95,7 +106,7 @@ func (v View) component(name string) (Node, error) {
 	wrapper = append(wrapper, []byte("<screen name=\"component\" version=\"3\">")...)
 	wrapper = append(wrapper, b...)
 	wrapper = append(wrapper, []byte("</screen>")...)
-	parsed, err := Parse(wrapper)
+	parsed, err := parseWithStyles(wrapper, v.styles)
 	if err != nil {
 		return Node{}, err
 	}
@@ -143,6 +154,9 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 	case "toggle", "choice":
 		return []string{renderSessionControl(n, values, width)}, nil
 	case "input", "number":
+		if n.Kind == "input" && n.Attr("appearance", "") == "boxed" {
+			return renderBoxedInput(n, values, width), nil
+		}
 		return []string{renderSessionInput(n, values, width)}, nil
 	case "image", "gif":
 		return v.renderTerminalMedia(n, width)
@@ -152,6 +166,13 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		return renderSparkline(n, values, width), nil
 	case "heatmap", "bar-chart", "stacked-bar", "waveform", "kpi", "activity-feed":
 		return renderDashboardWidget(n, values, width), nil
+	case "box":
+		childWidth, left := boxDimensions(n, width)
+		lines, err := v.lines(n.Children, values, childWidth, depth)
+		if err != nil {
+			return nil, err
+		}
+		return boxLines(lines, childWidth, left), nil
 	case "screen", "component", "column":
 		return v.lines(n.Children, values, width, depth)
 	case "section":

@@ -94,6 +94,43 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 	// overwriting all its borders with the outer panel's glow color.
 	for i := len(frame.Elements) - 1; i >= 0; i-- {
 		element := frame.Elements[i]
+		if element.Foreground != "" || element.Background != "" || element.BorderColor != "" || element.FGGradient != "" || element.BorderGradient != "" {
+			x0, y0, x1, y1, ok := glowBounds(frame, element)
+			if ok {
+				fg, hasFG := glowParseHex(element.Foreground)
+				bg, hasBG := glowParseHex(element.Background)
+				stroke, hasStroke := glowParseHex(element.BorderColor)
+				fgRamp, hasFGRamp := parseCellGradient(element.FGGradient)
+				borderRamp, hasBorderRamp := parseCellGradient(element.BorderGradient)
+				for y := y0; y < y1; y++ {
+					for x := x0; x < x1; x++ {
+						cell := frame.Cells[y][x]
+						if cell.Continuation {
+							continue
+						}
+						if hasFG {
+							inks[y][x].fg = glowSGR(fg, false)
+						}
+						if hasFGRamp {
+							inks[y][x].fg = glowSGR(sampleCellGradient(fgRamp, float64(x-x0)/float64(max(1, x1-x0-1))), false)
+						}
+						if hasBG {
+							inks[y][x].bg = glowSGR(bg, true)
+						}
+						if (element.Kind == "panel" || element.Kind == "input") && (x == x0 || x == x1-1 || y == y0 || y == y1-1) && glowStroke(cell.Grapheme) {
+							if hasStroke {
+								inks[y][x].fg = glowSGR(stroke, false)
+							}
+							if hasBorderRamp {
+								position := perimeterPosition(x-x0, y-y0, x1-x0, y1-y0)
+								inks[y][x].fg = glowSGR(sampleCellGradient(borderRamp, position), false)
+							}
+						}
+					}
+				}
+				styled = true
+			}
+		}
 		if element.Kind != "panel" && element.Kind != "table" {
 			continue
 		}
@@ -157,7 +194,9 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 					position := float64(x-x0) / float64(max(1, x1-x0-1))
 					ink = glowSGR(glowShade(color, animationBrightness(element, opts.Phase, brightness, position)), false)
 				}
-				inks[y][x].fg = ink
+				if (element.BorderColor == "" && element.BorderGradient == "") || (x != x0 && x != x1-1 && y != y0 && y != y1-1) {
+					inks[y][x].fg = ink
+				}
 				styled = true
 			}
 			if element.Kind != "table" || y != headerY && element.RowStyle != "striped" {

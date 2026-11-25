@@ -48,7 +48,7 @@ func validateControl(n Node) error {
 	if len(n.Children) != 0 || strings.TrimSpace(n.Text) != "" {
 		return errors.New("interactive SML elements must be empty")
 	}
-	allowed := map[string]bool{"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
+	allowed := map[string]bool{"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true, "foreground": true, "background": true, "foreground-gradient": true}
 	if n.Kind == "plugin-action" {
 		allowed = map[string]bool{"label": true, "label-key": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "style": true, "variant": true, "tone": true, "align": true, "case": true, "padding": true, "border": true}
 		if !validName.MatchString(n.Attr("plugin", "")) || !validName.MatchString(n.Attr("action", "")) {
@@ -197,6 +197,9 @@ func validateUIChildren(nodes []Node, screen, parent string) error {
 					return errors.New("otherwise must be the last conditional child")
 				}
 			}
+		}
+		if err := validateBox(node); err != nil {
+			return err
 		}
 		if err := validateControl(node); err != nil {
 			return err

@@ -14,7 +14,7 @@ import (
 
 var validName = regexp.MustCompile("^[A-Za-z0-9_-]{1,48}$")
 var allowed = map[string]bool{
-	"screen": true, "component": true, "column": true, "row": true, "grid": true,
+	"screen": true, "component": true, "column": true, "row": true, "grid": true, "box": true,
 	"text": true, "banner": true, "stat": true, "metric": true, "divider": true,
 	"spacer": true, "panel": true, "badge": true, "progress": true, "include": true,
 	"if": true, "when": true, "repeat": true, "table": true, "prompt": true, "alert": true,
@@ -59,6 +59,10 @@ func validateGridWeights(nodes []Node, version string) error {
 
 // Parse rejects invalid XML and unknown components before publishing a view.
 func Parse(data []byte) (View, error) {
+	return parseWithStyles(data, nil)
+}
+
+func parseWithStyles(data []byte, styles *assetStyles) (View, error) {
 	if len(data) > maxFileSize || !utf8.Valid(data) {
 		return View{}, errors.New("invalid SML size or UTF-8")
 	}
@@ -72,7 +76,8 @@ func Parse(data []byte) (View, error) {
 			break
 		}
 		if err != nil {
-			return View{}, fmt.Errorf("invalid SML XML: %w", err)
+			line, column := d.InputPos()
+			return View{}, fmt.Errorf("invalid SML XML at %d:%d: %w", line, column, err)
 		}
 		switch t := tok.(type) {
 		case xml.StartElement:
@@ -81,7 +86,8 @@ func Parse(data []byte) (View, error) {
 				return View{}, errors.New("SML node/depth limit exceeded")
 			}
 			if !allowed[t.Name.Local] || t.Name.Space != "" {
-				return View{}, fmt.Errorf("unsupported SML component <%s>", t.Name.Local)
+				line, column := d.InputPos()
+				return View{}, fmt.Errorf("unsupported SML component <%s> at %d:%d", t.Name.Local, line, column)
 			}
 			n := &Node{Kind: t.Name.Local, Attrs: map[string]string{}}
 			for _, a := range t.Attr {
@@ -135,7 +141,10 @@ func Parse(data []byte) (View, error) {
 	if len(stack) != 0 {
 		return View{}, errors.New("incomplete SML XML")
 	}
-	view := View{Name: name, Nodes: root.Children}
+	if err := applyAssetStyles(root.Children, styles); err != nil {
+		return View{}, err
+	}
+	view := View{Name: name, Nodes: root.Children, styles: styles}
 	if version != "3" && requiresSML3(view.Nodes) {
 		return View{}, errors.New("reactive SML components require version 3")
 	}

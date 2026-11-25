@@ -26,6 +26,14 @@ var routes = []Route{
 
 func Routes() []Route { return append([]Route(nil), routes...) }
 
+// The motion route's widget selection must not share the motion mode key.
+func widgetSelectionKey(route string) string {
+	if route == "motion" {
+		return "state.pw_widget_motion"
+	}
+	return "state.pw_" + route
+}
+
 type galleryPage struct {
 	view sml.View
 	ids  []string
@@ -47,7 +55,7 @@ func prepareGallery() {
 		var src strings.Builder
 		src.WriteString(`<screen name="premium-gallery" version="3"><column><text>PREMIUM WIDGETS / SYNTHETIC PREVIEW</text><divider variant="dotted"/>`)
 		if len(ids) > 1 {
-			fmt.Fprintf(&src, `<choice label="Widget" key="state.pw_%s" options="%s" id="pw-widget"/>`, route.ID, strings.Join(ids, ","))
+			fmt.Fprintf(&src, `<choice label="Widget" key="%s" options="%s" id="pw-widget"/>`, widgetSelectionKey(route.ID), strings.Join(ids, ","))
 		}
 		src.WriteString(`<choice label="Motion" key="state.pw_motion" options="Animated,Static" id="pw-motion"/><choice label="Glyphs" key="state.pw_glyphs" options="ASCII,Unicode" id="pw-glyphs"/><panel title="LIVE PREVIEW" border="single" padding="1">`)
 		for i := 1; i <= Height; i++ {
@@ -72,7 +80,7 @@ func Gallery(route string, width int, phase time.Duration, state map[string]stri
 		return sml.View{}, nil, false, p.err
 	}
 	id := p.ids[0]
-	key := "state.pw_" + route
+	key := widgetSelectionKey(route)
 	for _, candidate := range p.ids {
 		if state[key] == candidate {
 			id = candidate

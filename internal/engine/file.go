@@ -8,6 +8,10 @@ import (
 // ParseFile parses a standalone .sml view from a regular local file.
 // Includes and media assets require an asset root via View.WithAssets.
 func ParseFile(path string) (View, error) {
+	return parseFileWithStyles(path, nil)
+}
+
+func parseFileWithStyles(path string, styles *assetStyles) (View, error) {
 	info, err := os.Lstat(path)
 	if err != nil {
 		return View{}, err
@@ -19,5 +23,5 @@ func ParseFile(path string) (View, error) {
 	if err != nil {
 		return View{}, err
 	}
-	return Parse(data)
+	return parseWithStyles(data, styles)
 }

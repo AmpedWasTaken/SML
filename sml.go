@@ -44,6 +44,8 @@ type (
 	BindingSnapshot = engine.BindingSnapshot
 	// BindingState serializes typed presentation updates and snapshots.
 	BindingState = engine.BindingState
+	// AssetStore publishes validated view snapshots and retains the last good revision.
+	AssetStore = engine.AssetStore
 )
 
 // PaintGlowFrame styles panel/table borders and headers using only ANSI SGR.
@@ -61,6 +63,12 @@ func ParseFile(path string) (View, error) { return engine.ParseFile(path) }
 
 // LoadDir validates a directory of views and local reusable components.
 func LoadDir(dir string) (map[string]View, error) { return engine.LoadDir(dir) }
+
+// NewAssetStore loads the initial asset revision and checks required view names.
+// Reload is explicit; hosts choose when to call it.
+func NewAssetStore(dir string, required ...string) (*AssetStore, error) {
+	return engine.NewAssetStore(dir, required...)
+}
 
 // ParseActionBindings validates declarative action argument bindings.
 func ParseActionBindings(spec string) (map[string]string, error) {
