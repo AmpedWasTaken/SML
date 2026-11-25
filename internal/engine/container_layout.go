@@ -8,7 +8,7 @@ import (
 
 func layoutStyleAttribute(key string) bool {
 	switch key {
-	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items", "display", "flex-direction", "justify-content", "flex-wrap", "flex-grow", "flex-basis", "flex-shrink", "overflow", "max-height":
+	case "width", "min-width", "max-width", "columns", "weights", "gap", "row-gap", "collapse-below", "align-items", "display", "flex-direction", "justify-content", "flex-wrap", "flex-grow", "flex-basis", "flex-shrink", "overflow", "max-height", "position", "left", "top", "z-index":
 		return true
 	}
 	return false
@@ -16,7 +16,7 @@ func layoutStyleAttribute(key string) bool {
 
 func layoutStyleTarget(kind, key string) bool {
 	switch key {
-	case "width", "min-width", "max-width", "flex-grow", "flex-basis", "flex-shrink", "overflow", "max-height":
+	case "width", "min-width", "max-width", "flex-grow", "flex-basis", "flex-shrink", "overflow", "max-height", "position", "left", "top", "z-index":
 		return kind == "box"
 	case "display", "flex-direction", "justify-content", "flex-wrap":
 		return kind == "row"
@@ -30,6 +30,12 @@ func layoutStyleTarget(kind, key string) bool {
 
 func validateLayoutStyleValue(key, value string) error {
 	switch key {
+	case "position":
+		switch value {
+		case "static", "relative", "absolute":
+			return nil
+		}
+		return fmt.Errorf("position requires static, relative or absolute")
 	case "overflow":
 		switch value {
 		case "visible", "hidden", "auto":
@@ -98,6 +104,12 @@ func validateLayoutStyleValue(key, value string) error {
 		lo, hi = 0, 16
 	case "max-height":
 		lo, hi = 1, 3000
+	case "left":
+		lo, hi = 0, 240
+	case "top":
+		lo, hi = 0, 3000
+	case "z-index":
+		lo, hi = 0, 100
 	case "columns":
 		lo, hi = 1, 8
 	case "collapse-below":
