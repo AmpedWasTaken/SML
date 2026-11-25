@@ -782,6 +782,43 @@ class, compound and inline declarations.
 
 Selectors match literal markup IDs before rendering, not generated
 repeat-instance IDs. They cannot assign IDs, action names, enabled
-conditions or other behavioral metadata. Descendant/child combinators,
-attribute selectors, universal selectors, compound pseudo-selectors
-and `!important` are not supported.
+conditions or other behavioral metadata. Descendant/child combinators and compound pseudo-selectors are described below. Attribute selectors, universal selectors and `!important` are not supported.
+
+### Contextual selectors and compound control states
+
+```css
+panel.workspace button {
+    color: #AAB8B0;
+}
+
+panel.workspace > button {
+    border: round;
+}
+
+panel.workspace button.primary:hover {
+    color: #67D9A5;
+}
+
+button#save.primary:focus {
+    border-color: #FFFFFF;
+}
+```
+
+A space matches a descendant; `>` matches an immediate child.
+Selector chains support up to four component/class/ID segments.
+Specificity includes every segment; equal scores use stylesheet order.
+The matcher uses source markup ancestry during asset loading, including
+component definitions in their own source tree, not dynamically expanded
+call-site ancestry.
+
+The final segment may include `:hover`, `:focus`, or `:disabled`
+when it explicitly names a supported control component. Contextual state
+rules override component-wide state rules by specificity. These rules
+can change only foreground, background or border colors; they cannot
+change layout, bindings or action metadata. State paint is determined
+at load time and applied at render time using host-provided state IDs.
+Disabled paint remains higher priority than hover and focus.
+
+This is selector chaining, not nested CSS declaration block syntax.
+Contextual media selectors, sibling combinators, attribute selectors,
+inheritance and `!important` are not included.
