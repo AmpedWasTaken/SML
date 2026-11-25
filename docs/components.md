@@ -464,8 +464,8 @@ integer grow factors (0–16), cell or percentage bases, gaps,
 `align-items: start|center|end`. Items use a minimum horizontal allocation
 of 14 cells. When their bases do not fit, the row stacks instead of
 clipping controls. This is a bounded terminal-specific subset, not browser
-Flexbox: shrink factors, wrap lines, and arbitrary positioning are not
-implemented. Use flex-basis rather than width on flex item boxes when
+Flexbox: shrink factors and wrap lines are opt-in as described below; arbitrary
+positioning is not implemented. Use flex-basis rather than width on flex item boxes when
 allocating space in the parent row.
 
 Media rules support one inclusive min-width or max-width condition
@@ -519,3 +519,41 @@ scrolling; `overflow: visible` preserves normal box behavior. The host owns
 wheel/key events and scroll state. This is a bounded post-render viewport,
 not lazy rendering or a terminal event loop. `max-height` is measured in
 rows, not columns.
+
+### Flexible shrinking and wrapping
+
+```css
+row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2ch;
+    row-gap: 1;
+}
+
+.card {
+    flex-basis: 32ch;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 16ch;
+}
+```
+
+`flex-wrap: wrap` forms additional rows in source order when the natural
+item widths do not fit. Each line contains at most eight items. Growth and
+justification are calculated independently for each line. The default
+`nowrap` preserves earlier behavior.
+
+`flex-shrink` accepts an integer 0–16 (default 0). If a line's natural
+width exceeds available space, shrinkable items give up cells in
+proportion to their base width multiplied by the shrink factor. They
+never shrink below their minimum allocation (at least 14 cells); if the
+line still cannot fit, the engine stacks it. Integer rounding is
+deterministic. `collapse-below` and column direction still take
+precedence. When the terminal is narrower than a single item's minimum,
+the full available width wins.
+
+These properties are supported on flex rows and their box children
+respectively. Layout uses terminal cells, not browser pixels. The
+structural renderer maintains original child paths and translates
+element bounds and hitboxes for every wrapped line. This does not
+implement browser flex-wrap reverse, order, or arbitrary positioning.
