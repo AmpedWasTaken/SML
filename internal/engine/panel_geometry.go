@@ -35,5 +35,5 @@ func panelVisibleBounds(bounds Rect, lines []string, width int, align string) (R
 	if left >= right || first >= last {
 		return Rect{}, false
 	}
-	return Rect{X: left, Y: first, Width: right-left, Height: last-first}, true
+	return Rect{X: left, Y: first, Width: right - left, Height: last - first}, true
 }
