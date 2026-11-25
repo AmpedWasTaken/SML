@@ -121,9 +121,12 @@ func validateStyleAttribute(key, value string) error {
 // "align" on nonstyled elements is maintained for legacy SML compatibility.
 // Direct styling never changes authorization or executes code.
 func validateStyleSystem(nodes []Node) error {
-	var walk func([]Node) error
-	walk = func(parts []Node) error {
+	var walk func([]Node, bool) error
+	walk = func(parts []Node, positionedParent bool) error {
 		for _, node := range parts {
+			if node.Kind == "box" && node.Attr("position", "static") == "absolute" && !positionedParent {
+				return fmt.Errorf("absolute box requires a direct relative box parent")
+			}
 			if _, styleTag := node.Attrs["style"]; styleTag && node.Kind != "table" {
 				return fmt.Errorf("SML <%s> uses unsupported style=; set attributes directly", node.Kind)
 			}
@@ -158,13 +161,13 @@ func validateStyleSystem(nodes []Node) error {
 					return err
 				}
 			}
-			if err := walk(node.Children); err != nil {
+			if err := walk(node.Children, node.Kind == "box" && node.Attr("position", "static") == "relative"); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	return walk(nodes)
+	return walk(nodes, false)
 }
 
 func styleCase(s, kind string) string {
