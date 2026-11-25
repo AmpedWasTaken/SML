@@ -25,7 +25,7 @@ func validateSessionControl(n Node) error {
 		return errors.New("session control must be empty")
 	}
 	for key := range n.Attrs {
-		if key != "label" && key != "key" && key != "id" && !(n.Kind == "choice" && key == "options") {
+		if key != "border" && key != "label" && key != "key" && key != "id" && !(n.Kind == "choice" && key == "options") {
 			return fmt.Errorf("unsupported session control attribute %q", key)
 		}
 	}
@@ -67,6 +67,9 @@ func renderSessionControl(n Node, values map[string]string, width int) string {
 		if !valid {
 			current = options[0]
 		}
+	}
+	if hasControlBorder(n) {
+		return trim(label+": "+current, width)
 	}
 	return trim("[ "+label+": "+current+" ]", width)
 }

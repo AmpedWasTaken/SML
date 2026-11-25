@@ -153,6 +153,14 @@ func renderActionControl(n Node, values map[string]string, width int) string {
 	return styleAction(n, label, width)
 }
 
+func renderFramedAction(n Node, values map[string]string, width int) []string {
+	label := controlDisplayLabel(n, values)
+	if !controlEnabled(n, values) {
+		label += " (disabled)"
+	}
+	return framedControl(n, styleCase(label, n.Attr("case", "none")), width)
+}
+
 func validateUI(nodes []Node, screen string) error {
 	seen := map[string]bool{}
 	for _, node := range nodes {

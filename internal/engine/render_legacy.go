@@ -150,12 +150,21 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 	case "slot", "fill":
 		return nil, errors.New("unexpanded SML slot or fill")
 	case "button", "link", "plugin-action":
+		if hasControlBorder(n) {
+			return renderFramedAction(n, values, width), nil
+		}
 		return []string{renderActionControl(n, values, width)}, nil
 	case "toggle", "choice":
+		if hasControlBorder(n) {
+			return framedControl(n, renderSessionControl(n, values, width), width), nil
+		}
 		return []string{renderSessionControl(n, values, width)}, nil
 	case "input", "number":
 		if n.Kind == "input" && n.Attr("appearance", "") == "boxed" {
 			return renderBoxedInput(n, values, width), nil
+		}
+		if hasControlBorder(n) && n.Attr("appearance", "") != "inline" {
+			return framedControl(n, renderSessionInput(n, values, width), width), nil
 		}
 		return []string{renderSessionInput(n, values, width)}, nil
 	case "image", "gif":

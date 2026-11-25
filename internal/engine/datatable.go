@@ -17,7 +17,7 @@ type dataColumn struct {
 	width      int
 }
 
-var tableStyles = map[string]bool{"compact": true, "compact-lite": true, "compact-classic": true, "default": true, "markdown": true, "rounded": true, "unicode": true, "ascii": true}
+var tableStyles = map[string]bool{"compact": true, "compact-lite": true, "compact-classic": true, "default": true, "markdown": true, "rounded": true, "double": true, "unicode": true, "ascii": true}
 
 func validateTable(n Node) error {
 	if n.Kind == "column" {
@@ -35,7 +35,7 @@ func validateTable(n Node) error {
 	if err := validateAnimation(n); err != nil {
 		return err
 	}
-	if !tableStyles[n.Attr("style", "compact-lite")] {
+	if !tableStyles[n.Attr("style", "rounded")] {
 		return errors.New("unknown table style")
 	}
 	for _, key := range []string{"glow", "glow-color", "accent"} {
@@ -162,8 +162,8 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 	rows = rows[first:last]
 	// Compute a bounded width including border and spacing glyphs. Every
 	// style is deterministic and does not emit control sequences.
-	style := n.Attr("style", "compact-lite")
-	boxed := style == "rounded" || style == "default" || style == "unicode"
+	style := n.Attr("style", "rounded")
+	boxed := style == "rounded" || style == "default" || style == "double" || style == "unicode"
 	markdown := style == "markdown"
 	ascii := style == "ascii" || style == "compact-classic"
 	separator := " │ "
@@ -180,12 +180,28 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 		left = "│ "
 		right = " │"
 	}
+	if style == "double" {
+		separator = " ║ "
+		left = "║ "
+		right = " ║"
+	}
 	if style == "unicode" {
 		separator = " ┃ "
 		left = "┃ "
 		right = " ┃"
 	}
 	paddingCost := utf8.RuneCountInString(left) + utf8.RuneCountInString(right) + (len(cols)-1)*utf8.RuneCountInString(separator)
+	// On very narrow terminals, avoid clipped outer borders and separators.
+	if width < paddingCost+len(cols) {
+		output := []string{}
+		for _, row := range rows {
+			for _, col := range cols {
+				output = append(output, trim(col.label+": "+safe(row[col.key]), width))
+			}
+			output = append(output, "")
+		}
+		return append(output, trim(fmt.Sprintf("Page %d/%d · %d records", page, pages, total), width)), nil
+	}
 	budget := max(len(cols), width-paddingCost)
 	for i := range cols {
 		remaining := len(cols) - i
@@ -216,6 +232,8 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 		switch style {
 		case "rounded":
 			output = append(output, border("╭", "┬", "╮", "─"))
+		case "double":
+			output = append(output, border("╔", "╦", "╗", "═"))
 		case "unicode":
 			output = append(output, border("┏", "┳", "┓", "━"))
 		default:
@@ -226,6 +244,8 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 	switch style {
 	case "rounded":
 		output = append(output, border("├", "┼", "┤", "─"))
+	case "double":
+		output = append(output, border("╠", "╬", "╣", "═"))
 	case "unicode":
 		output = append(output, border("┣", "╋", "┫", "━"))
 	case "default":
@@ -260,13 +280,15 @@ func renderDataTable(n Node, values map[string]string, width int) ([]string, err
 		switch style {
 		case "rounded":
 			output = append(output, border("╰", "┴", "╯", "─"))
+		case "double":
+			output = append(output, border("╚", "╩", "╝", "═"))
 		case "unicode":
 			output = append(output, border("┗", "┻", "┛", "━"))
 		default:
 			output = append(output, border("└", "┴", "┘", "─"))
 		}
 	}
-	output = append(output, fmt.Sprintf("Page %d/%d · %d records", page, pages, total))
+	output = append(output, trim(fmt.Sprintf("Page %d/%d · %d records", page, pages, total), width))
 	return output, nil
 }
 func truncateCell(s string, w int) string {

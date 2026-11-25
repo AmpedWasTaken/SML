@@ -50,7 +50,7 @@ func TestDataTableEscapesControlAndRespectsBounds(t *testing.T) {
 
 func TestLegacyStyleFramesAndBoundedPaging(t *testing.T) {
 	expected := map[string]string{
-		"rounded": "╭", "default": "┌", "unicode": "┏",
+		"rounded": "╭", "default": "┌", "unicode": "┏", "double": "╔",
 		"markdown": "| ", "ascii": "NAME",
 		"compact": "NAME", "compact-lite": "NAME", "compact-classic": "NAME",
 	}
@@ -84,6 +84,53 @@ func TestLegacyTableRejectsInvalidColumnWidth(t *testing.T) {
 		markup := fmt.Sprintf(`<screen name="bad"><table source="rows"><column key="name" width="%s"/></table></screen>`, width)
 		if _, err := Parse([]byte(markup)); err == nil {
 			t.Fatalf("accepted invalid width: %s", width)
+		}
+	}
+}
+
+func TestTableDefaultsToRounded(t *testing.T) {
+	v, err := Parse([]byte(`<screen name="sample"><table source="rows"><column key="name" label="NAME" width="14"/></table></screen>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := v.RenderWidth(map[string]string{"rows": `[{"name":"alpha"}]`}, 40)
+	if len(lines) != 6 || !strings.HasPrefix(lines[0], "╭") || !strings.HasSuffix(lines[0], "╮") || !strings.HasPrefix(lines[4], "╰") || !strings.HasSuffix(lines[4], "╯") {
+		t.Fatalf("expected rounded default, got %q", lines)
+	}
+}
+
+func TestDoubleTableBordersAlign(t *testing.T) {
+	v, err := Parse([]byte(`<screen name="sample"><table source="rows" style="double"><column key="name" width="12"/><column key="state" width="8"/></table></screen>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := v.RenderWidth(map[string]string{"rows": `[{"name":"界","state":"ready"}]`}, 32)
+	if len(lines) != 6 {
+		t.Fatalf("unexpected rows: %q", lines)
+	}
+	for i, glyph := range []string{"╔", "║", "╠", "║", "╚"} {
+		if !strings.HasPrefix(lines[i], glyph) || CellWidth(lines[i]) != CellWidth(lines[0]) {
+			t.Fatalf("misaligned double frame: %q", lines)
+		}
+	}
+	if !strings.Contains(lines[0], "╦") || !strings.Contains(lines[2], "╬") || !strings.Contains(lines[4], "╩") {
+		t.Fatalf("missing double junctions: %q", lines)
+	}
+}
+
+func TestNarrowTableDoesNotClipBox(t *testing.T) {
+	v, err := Parse([]byte(`<screen name="sample"><table source="rows"><column key="one"/><column key="two"/><column key="three"/><column key="four"/></table></screen>`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := v.RenderWidth(map[string]string{"rows": `[{"one":"a","two":"b","three":"c","four":"d"}]`}, 12)
+	out := strings.Join(lines, "\n")
+	if !strings.Contains(out, "one: a") || !strings.Contains(out, "four: d") || strings.Contains(out, "╭") {
+		t.Fatalf("expected stacked narrow fallback, got %q", lines)
+	}
+	for _, line := range lines {
+		if CellWidth(line) > 12 {
+			t.Fatalf("row exceeds available width: %q", line)
 		}
 	}
 }

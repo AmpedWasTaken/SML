@@ -6,19 +6,20 @@ import (
 	"strings"
 )
 
-// SML v3 styling is defined directly on visual elements. No CSS-like
-// declarations, external theme imports, or executable style expressions.
+// SML v3 supports inline visual styles and bounded shared asset styles.
+// Neither form supports executable expressions.
 var styleAttributes = map[string]bool{
 	"border": true, "padding": true, "align": true, "case": true,
 	"variant": true, "tone": true, "glow": true, "glow-color": true, "accent": true,
 	"animate": true, "duration-ms": true, "easing": true,
 	"foreground": true, "background": true, "border-color": true,
-	"foreground-gradient": true, "border-gradient": true,
+	"foreground-gradient": true, "border-gradient": true, "appearance": true,
 }
 var styleTargets = map[string]bool{
 	"text": true, "badge": true, "alert": true, "metric": true,
 	"field": true, "section": true, "panel": true, "table": true, "divider": true,
 	"button": true, "link": true, "plugin-action": true, "input": true, "box": true,
+	"toggle": true, "choice": true, "number": true,
 }
 
 // Each visual element accepts only attributes used by its actual renderer.
@@ -32,9 +33,9 @@ var inlineProps = map[string]map[string]bool{
 	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
 	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animate": true, "duration-ms": true, "easing": true, "foreground": true, "background": true, "border-color": true, "foreground-gradient": true, "border-gradient": true},
 	"divider":       {"variant": true},
-	"button":        {"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true, "foreground": true, "background": true, "foreground-gradient": true},
-	"link":          {"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
-	"plugin-action": {"label": true, "label-key": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+	"button":        {"border": true, "label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true, "foreground": true, "background": true, "foreground-gradient": true},
+	"link":          {"border": true, "label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
+	"plugin-action": {"border": true, "label": true, "label-key": true, "id": true, "plugin": true, "action": true, "arg": true, "source": true, "bindings": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 }
 
 var glowColorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
@@ -54,6 +55,10 @@ func validateStyleAttribute(key, value string) error {
 		}
 	case "foreground-gradient", "border-gradient":
 		if _, ok := parseCellGradient(value); ok {
+			return nil
+		}
+	case "appearance":
+		if value == "inline" || value == "boxed" {
 			return nil
 		}
 	case "border":
@@ -214,6 +219,26 @@ func styleAction(n Node, label string, width int) string {
 	}
 	return trim(stylePad(n, label, width), width)
 }
+// framedControl keeps the label and the closing edge visible at narrow widths.
+func framedControl(n Node, label string, width int) []string {
+	border := styleBorder(n.Attr("border", "round"))
+	inner := max(0, width-2)
+	label = trim(strings.TrimSpace(label), max(0, inner-2))
+	content := " " + label + " "
+	span := min(inner, CellWidth(content))
+	rule := strings.Repeat(border.h, span)
+	return []string{
+		border.tl + rule + border.tr,
+		border.v + pad(trim(content, span), span) + border.v,
+		border.bl + rule + border.br,
+	}
+}
+
+func hasControlBorder(n Node) bool {
+	b := n.Attr("border", "none")
+	return b != "none" && b != ""
+}
+
 func styleDivider(n Node, width int) string {
 	glyph := "─"
 	switch n.Attr("variant", "default") {
