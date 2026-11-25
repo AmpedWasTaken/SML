@@ -85,6 +85,10 @@ func validateLayoutStyleValue(key, value string) error {
 		return nil
 	}
 	if key == "width" || key == "min-width" || key == "max-width" || key == "flex-basis" {
+		if isLengthExpression(value) {
+			_, err := evaluateLengthExpression(value, 120)
+			return err
+		}
 		if value == "auto" {
 			return nil
 		}
@@ -142,6 +146,13 @@ func validateContainerLayout(n Node) error {
 
 func resolveBoxLength(value string, available, fallback int) int {
 	if value == "" || value == "auto" {
+		return fallback
+	}
+	if isLengthExpression(value) {
+		result, err := evaluateLengthExpression(value, available)
+		if err == nil {
+			return max(12, min(240, result))
+		}
 		return fallback
 	}
 	if strings.HasSuffix(value, "%") {
