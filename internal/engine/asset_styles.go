@@ -158,14 +158,26 @@ func (s *assetStyles) resolve(key, value string) (string, error) {
 // Defaults have lowest priority; classes are applied left to right; explicit inline attributes win.
 // The ordinary parser still validates every resolved attribute against its node.
 func applyAssetStyles(nodes []Node, styles *assetStyles) error {
+	return applyContextStyles(nodes, styles, nil)
+}
+
+func applyContextStyles(nodes []Node, styles *assetStyles, ancestors []cssAncestor) error {
 	for i := range nodes {
 		n := &nodes[i]
 		spec, hasClass := n.Attrs["class"]
+		classes := strings.Fields(spec)
+		original := cssAncestor{node: *n, classes: classes}
+		if styles != nil && len(styles.Compound) > 0 && controlNode(*n) {
+			n.cssPaint = &cssControlPaint{
+				Hover:    styles.contextualState(*n, classes, ancestors, "hover"),
+				Focus:    styles.contextualState(*n, classes, ancestors, "focus"),
+				Disabled: styles.contextualState(*n, classes, ancestors, "disabled"),
+			}
+		}
 		if hasClass || (styles != nil && len(styles.Compound) > 0 && styleTargets[n.Kind]) {
 			if !styleTargets[n.Kind] || styles == nil {
 				return fmt.Errorf("SML <%s> class requires a shared stylesheet and a visual element", n.Kind)
 			}
-			classes := strings.Fields(spec)
 			if (hasClass && len(classes) == 0) || len(classes) > 8 {
 				return errors.New("SML class requires 1..8 class names")
 			}
@@ -182,7 +194,7 @@ func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 					merged[key] = value
 				}
 			}
-			if err := styles.compoundAttrs(*n, classes, merged); err != nil {
+			if err := styles.compoundAttrs(*n, classes, ancestors, merged); err != nil {
 				return err
 			}
 			for key, value := range n.Attrs {
@@ -214,7 +226,7 @@ func applyAssetStyles(nodes []Node, styles *assetStyles) error {
 				n.Attrs[key] = resolved
 			}
 		}
-		if err := applyAssetStyles(n.Children, styles); err != nil {
+		if err := applyContextStyles(n.Children, styles, append(ancestors, original)); err != nil {
 			return err
 		}
 	}
