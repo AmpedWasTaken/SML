@@ -356,6 +356,14 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 			}
 		}
 	case "row", "grid":
+		if n.Kind == "row" && n.Attr("display", "") == "flex" {
+			var err error
+			result, err = v.renderFlex(n, values, width, depth, path)
+			if err != nil {
+				return result, err
+			}
+			break
+		}
 		if len(n.Children) == 0 {
 			return result, nil
 		}
