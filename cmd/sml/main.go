@@ -28,11 +28,15 @@ func (b *bindings) Set(s string) error {
 func main() { os.Exit(run(os.Args[1:])) }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "Usage: sml <validate|render> [-assets DIR] [-width N] [-set key=value] PATH")
+	fmt.Fprintln(os.Stderr, "Usage: sml <validate|render|preview|debug> [-assets DIR] [-width N] [-set key=value] PATH")
 	fmt.Fprintln(os.Stderr, "validate accepts a .sml file or an assets directory; render accepts a .sml file")
+	fmt.Fprintln(os.Stderr, "preview/debug: sml preview -assets DIR [-watch] [-width N] [-height N] VIEW")
 }
 
 func run(args []string) int {
+	if len(args) > 0 && (args[0] == "preview" || args[0] == "debug") {
+		return runWorkspace(args[0], args[1:])
+	}
 	if len(args) < 1 || (args[0] != "validate" && args[0] != "render") {
 		usage()
 		return 2

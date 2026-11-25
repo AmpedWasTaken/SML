@@ -37,3 +37,17 @@ be referenced directly in visual attributes. The usual node-level checks
 still apply. Actions, bindings and executable properties cannot be set
 by styles. Shared classes and tokens are available through asset loading;
 standalone Parse/ParseFile intentionally have no external stylesheet.
+
+## Preview and inspect
+
+```sh
+sml preview -assets assets -width 80 -height 24 home
+sml preview -assets assets -watch -ascii home
+sml debug -assets assets -width 60 -scroll 5 home
+```
+
+The preview accepts repeatable `-set key=value` bindings and prints changed
+frames in watch mode, retaining the last display on invalid edits. Debug
+reports element bounds, visible hit targets and binding dependencies. No
+actions are dispatched. `Frame.ASCII()` also exposes a geometry-preserving
+fallback for host-selected older terminal profiles.
