@@ -34,6 +34,9 @@ type Element struct {
 	Animation   string
 	DurationMS  int
 	Easing      string
+	Foreground  string
+	Background  string
+	BorderColor string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -154,6 +157,7 @@ func (out *layoutBlock) mark(n Node, id string, width int) {
 		ID: id, Kind: n.Kind, Bounds: Rect{Width: min(actual, width), Height: len(out.lines)},
 		Glow: n.Attr("glow", "none"), GlowColor: n.Attr("glow-color", ""),
 		Accent: n.Attr("accent", ""), HeaderStyle: n.Attr("header-style", "default"), RowStyle: n.Attr("row-style", "plain"),
+		Foreground: n.Attr("foreground", ""), Background: n.Attr("background", ""), BorderColor: n.Attr("border-color", ""),
 		Animation: n.Attr("animate", ""), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
 	})
 }
@@ -246,6 +250,14 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 	switch n.Kind {
 	case "gradient", "derive":
 		return result, nil
+	case "box":
+		childWidth, left := boxDimensions(n, width)
+		child, err := v.renderLayoutNodes(n.Children, values, childWidth, depth, path)
+		if err != nil {
+			return result, err
+		}
+		result.lines = boxLines(child.lines, childWidth, left)
+		offsetBlock(&result, child, left, 0)
 	case "column", "component", "screen":
 		child, err := v.renderLayoutNodes(n.Children, values, width, depth, path)
 		if err != nil {
@@ -466,17 +478,24 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		result.lines = lines
 		if controlNode(n) && len(lines) > 0 {
 			interactive := controlEnabled(n, values)
-			text := lines[0]
+			controlLine := 0
+			if n.Kind == "input" && n.Attr("appearance", "") == "boxed" && len(lines) == 3 {
+				controlLine = 1
+			}
+			text := lines[controlLine]
 			lead := CellWidth(text) - CellWidth(strings.TrimLeft(text, " "))
 			right := CellWidth(strings.TrimRight(text, " "))
 			right = min(right, width)
+			if controlLine == 1 {
+				lead, right = 1, width-1
+			}
 			if interactive && right > lead {
 				generic := ""
 				if n.Kind == "button" || n.Kind == "link" {
 					generic = n.Attr("action", "")
 				}
 				result.spots = append(result.spots, Hotspot{
-					ID: id, Action: generic, Line: 0, Start: lead, End: right,
+					ID: id, Action: generic, Line: controlLine, Start: lead, End: right,
 					Label: controlDisplayLabel(n, values), Page: n.Attr("page", ""), Command: n.Attr("command", ""),
 					Kind: n.Kind, Key: n.Attr("key", ""), Options: controlOptions(n),
 					PluginID: n.Attr("plugin", ""), PluginAction: n.Attr("action", ""),
@@ -491,6 +510,11 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		return layoutBlock{}, errors.New("SML render output exceeds limit")
 	}
 	result.mark(n, id, width)
+	if n.Kind == "box" {
+		childWidth, left := boxDimensions(n, width)
+		result.elements[len(result.elements)-1].Bounds.X = left
+		result.elements[len(result.elements)-1].Bounds.Width = childWidth
+	}
 	return result, nil
 }
 

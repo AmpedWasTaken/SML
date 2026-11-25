@@ -154,6 +154,9 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 	case "toggle", "choice":
 		return []string{renderSessionControl(n, values, width)}, nil
 	case "input", "number":
+		if n.Kind == "input" && n.Attr("appearance", "") == "boxed" {
+			return renderBoxedInput(n, values, width), nil
+		}
 		return []string{renderSessionInput(n, values, width)}, nil
 	case "image", "gif":
 		return v.renderTerminalMedia(n, width)
@@ -163,6 +166,13 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		return renderSparkline(n, values, width), nil
 	case "heatmap", "bar-chart", "stacked-bar", "waveform", "kpi", "activity-feed":
 		return renderDashboardWidget(n, values, width), nil
+	case "box":
+		childWidth, left := boxDimensions(n, width)
+		lines, err := v.lines(n.Children, values, childWidth, depth)
+		if err != nil {
+			return nil, err
+		}
+		return boxLines(lines, childWidth, left), nil
 	case "screen", "component", "column":
 		return v.lines(n.Children, values, width, depth)
 	case "section":

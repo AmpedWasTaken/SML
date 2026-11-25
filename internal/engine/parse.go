@@ -14,7 +14,7 @@ import (
 
 var validName = regexp.MustCompile("^[A-Za-z0-9_-]{1,48}$")
 var allowed = map[string]bool{
-	"screen": true, "component": true, "column": true, "row": true, "grid": true,
+	"screen": true, "component": true, "column": true, "row": true, "grid": true, "box": true,
 	"text": true, "banner": true, "stat": true, "metric": true, "divider": true,
 	"spacer": true, "panel": true, "badge": true, "progress": true, "include": true,
 	"if": true, "when": true, "repeat": true, "table": true, "prompt": true, "alert": true,
