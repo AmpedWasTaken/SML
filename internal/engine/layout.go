@@ -558,6 +558,9 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 	if controlNode(n) {
 		element := &result.elements[len(result.elements)-1]
 		element.controlPaint = v.controlPaint(n.Kind)
+		if n.cssPaint != nil {
+			element.controlPaint = *n.cssPaint
+		}
 		if v.styles != nil {
 			element.transition = v.styles.Transitions[n.Kind]
 		}
