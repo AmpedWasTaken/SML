@@ -139,7 +139,14 @@ func (v View) renderFlex(n Node, values map[string]string, width, depth int, pat
 			line = children[start:end]
 			widths, free = []int{width}, 0
 		}
-		part, err := v.renderFlexLine(n, line, widths, free, gap, width, depth, start, path, values)
+		var part layoutBlock
+		var err error
+		if stack || !fits {
+			child := line[0]
+			part, err = v.renderLayoutNode(child, values, width, depth+1, fmt.Sprintf("%s/%d:%s", path, start, child.Kind))
+		} else {
+			part, err = v.renderFlexLine(n, line, widths, free, gap, width, depth, start, path, values)
+		}
 		if err != nil {
 			return layoutBlock{}, err
 		}
