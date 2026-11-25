@@ -26,11 +26,14 @@ func validateTable(n Node) error {
 	if n.Kind != "table" {
 		return nil
 	}
-	allowed := map[string]bool{"source": true, "style": true, "page": true, "page-size": true, "sort": true, "order": true, "filter": true, "empty": true, "glow": true, "glow-color": true, "accent": true, "header-style": true, "row-style": true}
+	allowed := map[string]bool{"source": true, "style": true, "page": true, "page-size": true, "sort": true, "order": true, "filter": true, "empty": true, "glow": true, "glow-color": true, "accent": true, "header-style": true, "row-style": true, "animate": true, "duration-ms": true, "easing": true}
 	for k := range n.Attrs {
 		if !allowed[k] {
 			return fmt.Errorf("unknown table attribute %q", k)
 		}
+	}
+	if err := validateAnimation(n); err != nil {
+		return err
 	}
 	if !tableStyles[n.Attr("style", "compact-lite")] {
 		return errors.New("unknown table style")

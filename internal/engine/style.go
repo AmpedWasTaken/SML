@@ -11,6 +11,7 @@ import (
 var styleAttributes = map[string]bool{
 	"border": true, "padding": true, "align": true, "case": true,
 	"variant": true, "tone": true, "glow": true, "glow-color": true, "accent": true,
+	"animate": true, "duration-ms": true, "easing": true,
 }
 var styleTargets = map[string]bool{
 	"text": true, "badge": true, "alert": true, "metric": true,
@@ -27,7 +28,7 @@ var inlineProps = map[string]map[string]bool{
 	"metric":        {"label": true, "value": true, "align": true, "case": true, "padding": true, "tone": true},
 	"field":         {"key": true, "label": true, "unit": true, "fallback": true, "align": true, "case": true, "padding": true, "tone": true},
 	"section":       {"title": true, "align": true, "case": true, "padding": true, "tone": true, "variant": true},
-	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true},
+	"panel":         {"title": true, "border": true, "align": true, "case": true, "padding": true, "tone": true, "glow": true, "glow-color": true, "accent": true, "animate": true, "duration-ms": true, "easing": true},
 	"divider":       {"variant": true},
 	"button":        {"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
 	"link":          {"label": true, "label-key": true, "page": true, "command": true, "action": true, "id": true, "enabled-when": true, "align": true, "case": true, "padding": true, "variant": true},
@@ -100,6 +101,9 @@ func validateStyleSystem(nodes []Node) error {
 					}
 				}
 			}
+			if err := validateAnimation(node); err != nil {
+				return err
+			}
 			for key := range styleAttributes {
 				value, ok := node.Attrs[key]
 				if !ok {
@@ -110,6 +114,9 @@ func validateStyleSystem(nodes []Node) error {
 						continue
 					}
 					return fmt.Errorf("styling not supported on <%s>", node.Kind)
+				}
+				if key == "animate" || key == "duration-ms" || key == "easing" {
+					continue // validated together by validateAnimation
 				}
 				if err := validateStyleAttribute(key, value); err != nil {
 					return err
