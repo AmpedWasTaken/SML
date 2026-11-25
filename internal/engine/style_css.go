@@ -267,6 +267,9 @@ func normalizeCSS(attrs, tokens, keyframes map[string]string) error {
 		attrs["animate"], attrs["duration-ms"] = parts[0], strconv.Itoa(ms)
 		if curve := keyframes[parts[0]]; curve != "" {
 			attrs["animate"], attrs["animation-curve"] = "keyframes", curve
+			if strings.Contains(curve, "|") {
+				attrs["animate"] = "color-keyframes"
+			}
 		} else if parts[0] != "pulse" && parts[0] != "sweep" && parts[0] != "fade" {
 			return fmt.Errorf("unknown SMLCSS animation %q", parts[0])
 		}
@@ -277,6 +280,27 @@ func normalizeCSS(attrs, tokens, keyframes map[string]string) error {
 			attrs["animation-repeat"] = parts[3]
 		}
 		delete(attrs, "animation")
+	}
+	if value, ok := attrs["animation-delay"]; ok {
+		if _, exists := attrs["animation-delay-ms"]; exists {
+			return fmt.Errorf("conflicting animation delay properties")
+		}
+		if strings.HasPrefix(value, "@") {
+			value = tokens[value[1:]]
+		}
+		delay, err := cssDelayMilliseconds(value)
+		if err != nil {
+			return err
+		}
+		attrs["animation-delay-ms"] = strconv.Itoa(delay)
+		delete(attrs, "animation-delay")
+	}
+	if value, ok := attrs["animation-iteration-count"]; ok {
+		if _, exists := attrs["animation-repeat"]; exists {
+			return fmt.Errorf("conflicting animation iteration properties")
+		}
+		attrs["animation-repeat"] = value
+		delete(attrs, "animation-iteration-count")
 	}
 	for _, key := range []string{"width", "min-width", "max-width", "gap", "row-gap", "collapse-below", "padding", "flex-basis", "left"} {
 		if v, ok := attrs[key]; ok {
