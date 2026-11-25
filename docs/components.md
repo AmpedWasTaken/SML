@@ -288,7 +288,104 @@ retain an unframed control. Inputs with `appearance="boxed"` retain
 their existing full-width input layout.
 
 SMLCSS is a deliberately small terminal styling grammar, not browser CSS.
-It does not support imports, scripts, nested rules, pseudo-selectors, or
-arbitrary properties. Component selectors and classes accept only validated
+It does not support imports, scripts, arbitrary nested selectors, pseudo-selectors, or
+arbitrary properties. Bounded animation keyframes are described below. Component selectors and classes accept only validated
 presentation attributes. Table presets use `style` on the table selector.
 Existing explicit styles remain valid.
+
+### Extended SMLCSS layout and animation
+
+Group component selectors with commas and split their declarations over
+several rules. Later declarations for the same component or class replace
+earlier ones; the established class/inline precedence remains unchanged.
+
+```css
+:root {
+    --accent: #67d9a5;
+}
+
+panel, button, input {
+    border: round;
+}
+
+panel {
+    color: var(--accent);
+    background-color: #09110d;
+}
+
+box {
+    width: 80%;
+    min-width: 24ch;
+    max-width: 100ch;
+}
+
+grid {
+    grid-template-columns: 1fr 2fr;
+    column-gap: 2ch;
+    row-gap: 1;
+    align-items: center;
+    collapse-below: 60ch;
+}
+```
+
+`box` widths can be terminal cells (plain integers or CSS `ch` units),
+percentages of the parent, or `auto`. The terminal's available width always
+wins over a minimum width. `grid-template-columns` accepts 1–8 integer
+fractional tracks from `1fr` to `16fr`. Use `RenderFrame` for weighted
+geometry; the legacy text renderer retains its equal-width grid behavior.
+Rows and grids accept `row-gap` (0–8 rows), `column-gap` (alias for
+`gap`), `align-items: start|center|end` and `collapse-below` (20–240 cells).
+The collapse threshold is relative to the container width.
+
+CSS aliases map to existing SML attributes: `color` to `foreground`,
+`background-color` to `background`, `text-align` to `align`, and
+`text-transform: uppercase|lowercase|none` to `case`. The applicable
+component must support the underlying property.
+
+### Animation shorthand and custom brightness keyframes
+
+```css
+@keyframes breathe {
+    from { brightness: 40%; }
+    50%  { brightness: 100%; }
+    to   { brightness: 40%; }
+}
+
+panel {
+    border: double;
+    glow: medium;
+    glow-color: #67d9a5;
+    animation: breathe 2s ease-in-out infinite;
+}
+
+table {
+    glow: soft;
+    animation: sweep 1200ms linear infinite;
+}
+```
+
+The animation shorthand accepts an existing effect (`pulse`, `sweep`,
+`fade`) or a defined keyframe name, a duration (250ms–10s), an optional
+easing (`linear`, `ease-in`, `ease-out`, `ease-in-out`), and an optional
+iteration value (`1` or `infinite`). Custom keyframes currently interpolate
+brightness only; they require 0% and 100% endpoints, at most eight stops,
+and brightness values of 30–100%. They cannot change geometry, visibility,
+or action metadata. Only panels and tables support animation.
+
+For animation, the host must call `PaintGlowFrame` or
+`RenderGlowInteractive` with truecolor, animation enabled and a changing
+phase. For example:
+
+```go
+rows, err := sml.PaintGlowFrame(frame, sml.GlowOptions{
+    TrueColor: true,
+    Animate:   true,
+    Phase:     elapsed,
+})
+```
+
+Animation is quantized to the existing 12 FPS rendering phase. Hosts can
+disable color or respect reduced-motion preferences. SMLCSS does not own
+the event loop or schedule background work. Browser CSS transforms,
+general property keyframes, transitions, hover/focus selectors, full
+flexbox and arbitrary media queries are not implemented in this increment.

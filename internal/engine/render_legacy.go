@@ -279,6 +279,7 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		subwidth := max(12, (width-gap*(columns-1))/columns)
 		out := []string{}
 		for i := 0; i < len(n.Children); i += columns {
+			if i > 0 { out = append(out, make([]string,boundedInt(n.Attr("row-gap","0"),0,0,8))...) }
 			count := min(columns, len(n.Children)-i)
 			groups := make([][]string, count)
 			maxrows := 0
@@ -296,8 +297,13 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 				parts := []string{}
 				for j, g := range groups {
 					value := ""
-					if row < len(g) {
-						value = g[row]
+					offset := 0
+					switch n.Attr("align-items","start") {
+					case "center": offset = (maxrows-len(g))/2
+					case "end": offset = maxrows-len(g)
+					}
+					if row >= offset && row-offset < len(g) {
+						value = g[row-offset]
 					}
 					if j < count-1 {
 						value = pad(value, subwidth)
