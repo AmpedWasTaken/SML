@@ -13,6 +13,12 @@ type cssCompoundRule struct {
 	state   string
 	parents []cssCompoundRule
 	direct  []bool
+	filters []cssAttributeFilter
+}
+
+type cssAttributeFilter struct {
+	key, value string
+	hasValue   bool
 }
 
 // parseContextSelector supports at most four simple selector segments.
@@ -69,7 +75,7 @@ func parseContextSelector(selector string) (cssCompoundRule, error) {
 func parseCompoundSelector(selector string) (cssCompoundRule, error) {
 	rule := cssCompoundRule{}
 	rest := selector
-	if i := strings.IndexAny(rest, ".#"); i > 0 {
+	if i := strings.IndexAny(rest, ".#["); i > 0 {
 		rule.kind, rest = rest[:i], rest[i:]
 		if !styleTargets[rule.kind] {
 			return rule, fmt.Errorf("unknown compound selector target %q", rule.kind)
@@ -77,11 +83,24 @@ func parseCompoundSelector(selector string) (cssCompoundRule, error) {
 	}
 	for rest != "" {
 		prefix := rest[0]
+		if prefix == '[' {
+			end := strings.IndexByte(rest, ']')
+			if end < 0 || len(rule.filters) >= 4 {
+				return rule, fmt.Errorf("invalid or excessive attribute selectors")
+			}
+			filter, err := parseCSSAttributeFilter(rest[1:end])
+			if err != nil {
+				return rule, err
+			}
+			rule.filters = append(rule.filters, filter)
+			rest = rest[end+1:]
+			continue
+		}
 		if prefix != '.' && prefix != '#' {
 			return rule, fmt.Errorf("invalid compound selector %q", selector)
 		}
 		rest = rest[1:]
-		end := strings.IndexAny(rest, ".#")
+		end := strings.IndexAny(rest, ".#[")
 		if end < 0 {
 			end = len(rest)
 		}
@@ -107,14 +126,14 @@ func parseCompoundSelector(selector string) (cssCompoundRule, error) {
 			return rule, fmt.Errorf("too many selector classes")
 		}
 	}
-	if rule.id == "" && len(rule.classes) == 0 {
-		return rule, fmt.Errorf("compound selector requires a class or ID")
+	if rule.id == "" && len(rule.classes) == 0 && len(rule.filters) == 0 {
+		return rule, fmt.Errorf("compound selector requires a class, ID or attribute")
 	}
 	return rule, nil
 }
 
 func (r cssCompoundRule) specificity() int {
-	score := len(r.classes) * 100
+	score := (len(r.classes) + len(r.filters)) * 100
 	if r.state != "" {
 		score += 100
 	}
@@ -134,6 +153,12 @@ func (r cssCompoundRule) matches(n Node, classes []string) bool {
 	if !styleTargets[n.Kind] || (r.kind != "" && r.kind != n.Kind) ||
 		(r.id != "" && r.id != n.Attr("id", "")) {
 		return false
+	}
+	for _, filter := range r.filters {
+		value, exists := n.Attrs[filter.key]
+		if !exists || (filter.hasValue && value != filter.value) {
+			return false
+		}
 	}
 	for _, name := range r.classes {
 		found := false
@@ -263,4 +288,24 @@ func (s *assetStyles) contextualState(n Node, classes []string, ancestors []cssA
 		}
 	}
 	return cssStatePaint{Foreground: attrs["foreground"], Background: attrs["background"], BorderColor: attrs["border-color"]}
+}
+
+func parseCSSAttributeFilter(source string) (cssAttributeFilter, error) {
+	key, value, hasValue := strings.Cut(source, "=")
+	// Match only literal visual attributes, not action metadata or bindings.
+	switch key {
+	case "variant", "tone", "appearance", "border", "align", "case":
+	default:
+		return cssAttributeFilter{}, fmt.Errorf("unsupported attribute selector %q", key)
+	}
+	if hasValue {
+		if len(value) >= 2 && ((value[0] == '"' && value[len(value)-1] == '"') ||
+			(value[0] == '\'' && value[len(value)-1] == '\'')) {
+			value = value[1 : len(value)-1]
+		}
+		if !validName.MatchString(value) || validateStyleAttribute(key, value) != nil {
+			return cssAttributeFilter{}, fmt.Errorf("invalid attribute selector value %q", value)
+		}
+	}
+	return cssAttributeFilter{key: key, value: value, hasValue: hasValue}, nil
 }
