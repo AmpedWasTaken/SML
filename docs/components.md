@@ -252,3 +252,43 @@ Prefer generic `action` IDs for standalone applications:
 ```
 
 `RenderFrame` and `RenderInteractive` return a `Hotspot` with `ID` and `Action`. Applications handle the action after their own authorization checks. Legacy `command` and `page` targets remain for existing SML v1–v3 views; they are not a general-purpose execution interface.
+
+## Global terminal styles with SMLCSS
+
+Put `styles.smlcss` next to the asset directory's `views/` folder (or use
+the existing `styles.json` format, but not both). The asset loader validates
+the stylesheet together with the views and components.
+
+```css
+:root {
+    --edge: round;
+    --space: 1;
+}
+
+panel {
+    border: var(--edge);
+    padding: var(--space);
+}
+
+button { border: var(--edge); }
+input { border: var(--edge); }
+choice { border: var(--edge); }
+toggle { border: var(--edge); }
+number { border: var(--edge); }
+table { style: rounded; }
+
+.important { border: double; }
+.classic { border: ascii; }
+```
+
+Use `class="important"` on a compatible SML v3 component.
+The precedence is component default, then classes in declaration order on
+the element, then explicit inline attributes. Use `border="none"` to
+retain an unframed control. Inputs with `appearance="boxed"` retain
+their existing full-width input layout.
+
+SMLCSS is a deliberately small terminal styling grammar, not browser CSS.
+It does not support imports, scripts, nested rules, pseudo-selectors, or
+arbitrary properties. Component selectors and classes accept only validated
+presentation attributes. Table presets use `style` on the table selector.
+Existing explicit styles remain valid.
