@@ -782,7 +782,7 @@ class, compound and inline declarations.
 
 Selectors match literal markup IDs before rendering, not generated
 repeat-instance IDs. They cannot assign IDs, action names, enabled
-conditions or other behavioral metadata. Descendant/child combinators and compound pseudo-selectors are described below. Attribute selectors, universal selectors and `!important` are not supported.
+conditions or other behavioral metadata. Descendant/child combinators and compound pseudo-selectors are described below. Attribute selectors are described below. Universal selectors and `!important` are not supported.
 
 ### Contextual selectors and compound control states
 
@@ -820,5 +820,56 @@ at load time and applied at render time using host-provided state IDs.
 Disabled paint remains higher priority than hover and focus.
 
 This is selector chaining, not nested CSS declaration block syntax.
-Contextual media selectors, sibling combinators, attribute selectors,
-inheritance and `!important` are not included.
+Contextual media selectors, sibling combinators and `!important` are not included. Attribute selectors and explicit inheritance are described below.
+
+### Visual attribute selectors
+
+```css
+button[variant="outline"] {
+    color: #67D9A5;
+}
+
+button[border][variant=outline]:hover {
+    color: #FFFFFF;
+}
+
+panel.workspace button[variant='solid'] {
+    background-color: #14291E;
+}
+```
+
+Attribute selectors match literal source markup before any style defaults
+are applied. They support presence and exact equality on the visual
+attributes variant, tone, appearance, border, align and case. Equality
+values may be unquoted or surrounded by matching single or double
+quotes; whitespace inside brackets and substring or pattern operators
+are not supported. Each segment can have up to four attribute filters.
+Each filter contributes class-level specificity. Behavior attributes
+and dynamic bindings are deliberately excluded.
+
+### Explicit color inheritance
+
+```css
+panel.workspace {
+    color: #67D9A5;
+    background-color: #14291E;
+}
+
+panel.workspace button[variant=outline] {
+    color: inherit;
+    background-color: inherit;
+}
+```
+
+The foreground and background properties on boxes, panels, buttons
+and text may explicitly use `inherit`. They resolve to the closest
+ancestor's computed explicit RGB color in the source tree, through
+unpainted wrapper nodes. If no such color exists, the property is
+removed and normal terminal painting applies. Existing elements do
+not automatically acquire new inherited declarations; the opt-in
+keyword keeps previously published layouts compatible. The usual
+inline precedence still applies.
+
+Inheritance is resolved during asset loading, not by dynamic render
+state. Interactive state selectors require explicit RGB colors.
+Layout values, gradients and arbitrary CSS properties cannot inherit.
