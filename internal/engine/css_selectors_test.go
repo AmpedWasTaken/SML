@@ -56,8 +56,8 @@ func TestCSSCompoundRejectsInvalidRules(t *testing.T) {
 		"button.primary.primary { color: #111111; }",
 		"button.primary { action: app.open; }",
 		"button.primary { width: 20ch; }",
-		"panel > button.primary { color: #111111; }",
-		"button.primary:hover { color: #111111; }",
+		"panel > > button.primary { color: #111111; }",
+		"button.primary:hover { action: app.open; }",
 	} {
 		dir := t.TempDir()
 		writeSnapshotAsset(t, dir, "styles.smlcss", source)
