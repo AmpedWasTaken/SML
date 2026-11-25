@@ -86,7 +86,7 @@ positions after wrapping. Invalid weight vectors fail parsing, not rendering.
 </screen>
 ```
 
-`table` receives JSON rows as a *string binding* (`data.rows`). It supports bounded paging, sorting and filtering. Table `style` accepts `compact`, `compact-lite`, `compact-classic`, `default`, `rounded`, `unicode`, `markdown`, and `ascii`. Unlike other visual components, this is an existing table-specific preset, not CSS.
+`table` receives JSON rows as a *string binding* (`data.rows`). It supports bounded paging, sorting and filtering. Table `style` accepts `compact`, `compact-lite`, `compact-classic`, `default`, `rounded`, `double`, `unicode`, `markdown`, and `ascii`. Omitting `style` uses `rounded`. Use `double` for double-line borders, or `compact-lite` to retain the old compact layout. Narrow tables stack their fields when a complete frame cannot fit. Unlike other visual components, this is an existing table-specific preset, not CSS.
 
 ## Control flow and computed fields
 
