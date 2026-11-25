@@ -121,9 +121,12 @@ func validateStyleAttribute(key, value string) error {
 // "align" on nonstyled elements is maintained for legacy SML compatibility.
 // Direct styling never changes authorization or executes code.
 func validateStyleSystem(nodes []Node) error {
-	var walk func([]Node, bool) error
-	walk = func(parts []Node, positionedParent bool) error {
-		for _, node := range parts {
+	var walk func([]Node, bool, bool) error
+	walk = func(parts []Node, positionedParent, stickyParent bool) error {
+		for i, node := range parts {
+			if node.Kind == "box" && node.Attr("position", "static") == "sticky" && (!stickyParent || i != 0) {
+				return fmt.Errorf("sticky box must be the first direct child of an auto-scroll box")
+			}
 			if node.Kind == "box" && node.Attr("position", "static") == "absolute" && !positionedParent {
 				return fmt.Errorf("absolute box requires a direct relative box parent")
 			}
@@ -161,13 +164,13 @@ func validateStyleSystem(nodes []Node) error {
 					return err
 				}
 			}
-			if err := walk(node.Children, node.Kind == "box" && node.Attr("position", "static") == "relative"); err != nil {
+			if err := walk(node.Children, node.Kind == "box" && node.Attr("position", "static") == "relative", node.Kind == "box" && node.Attr("overflow", "visible") == "auto" && node.Attr("position", "static") != "relative"); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
-	return walk(nodes, false)
+	return walk(nodes, false, false)
 }
 
 func styleCase(s, kind string) string {
