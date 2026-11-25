@@ -66,6 +66,7 @@ func parseStyleCSS(source string) (assetStyles, error) {
 		Tokens:   map[string]string{},
 		Classes:  map[string]map[string]string{},
 		Defaults: map[string]map[string]string{},
+		States:   map[string]map[string]string{},
 	}
 	if !utf8.ValidString(source) || len(source) > maxFileSize {
 		return out, fmt.Errorf("invalid SMLCSS size or UTF-8")
@@ -134,7 +135,15 @@ func parseStyleCSS(source string) (assetStyles, error) {
 		for _, part := range selectors {
 			part = strings.TrimSpace(part)
 			var target map[string]string
-			if strings.HasPrefix(part, ".") {
+			if strings.Contains(part, ":") {
+				if _, _, err := cssStateSelector(part); err != nil {
+					return out, err
+				}
+				if out.States[part] == nil {
+					out.States[part] = map[string]string{}
+				}
+				target = out.States[part]
+			} else if strings.HasPrefix(part, ".") {
 				name := part[1:]
 				if !validName.MatchString(name) {
 					return out, fmt.Errorf("invalid SMLCSS class %q", part)
@@ -157,7 +166,7 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			}
 		}
 	}
-	for _, group := range []map[string]map[string]string{out.Classes, out.Defaults} {
+	for _, group := range []map[string]map[string]string{out.Classes, out.Defaults, out.States} {
 		for _, attrs := range group {
 			if err := normalizeCSS(attrs, out.Tokens, keyframes); err != nil {
 				return out, err
