@@ -157,7 +157,7 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 		case "strong":
 			brightness = 100
 		}
-		if opts.Animate && !opts.ReducedMotion && element.Animation == "pulse" {
+		if opts.Animate && !opts.ReducedMotion && (element.Animation == "pulse" || element.Animation == "keyframes") {
 			brightness = animationBrightness(element, opts.Phase, brightness, 0)
 		}
 		base := glowSGR(glowShade(color, brightness), false)
