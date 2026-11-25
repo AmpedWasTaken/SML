@@ -262,6 +262,10 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		}
 		return v.node(part, values, width, depth+1)
 	case "row", "grid":
+		if n.Kind == "row" && n.Attr("display", "") == "flex" {
+			block, err := v.renderLayoutNode(n, values, width, depth, "legacy:flex")
+			return block.lines, err
+		}
 		if len(n.Children) == 0 {
 			return nil, nil
 		}
