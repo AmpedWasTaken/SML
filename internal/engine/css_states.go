@@ -49,6 +49,9 @@ func validateCSSStates(styles *assetStyles) error {
 			if err != nil {
 				return err
 			}
+			if resolved == "inherit" {
+				return fmt.Errorf("state selectors require explicit colors")
+			}
 			attrs[key] = resolved
 		}
 	}

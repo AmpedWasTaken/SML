@@ -26,6 +26,10 @@ func boxViewport(n Node, values map[string]string, total int) (start, end int) {
 
 func clipBoxViewport(n Node, values map[string]string, block layoutBlock) layoutBlock {
 	start, end := boxViewport(n, values, len(block.lines))
+	return sliceLayoutRows(block, start, end)
+}
+
+func sliceLayoutRows(block layoutBlock, start, end int) layoutBlock {
 	if start == 0 && end == len(block.lines) {
 		return block
 	}

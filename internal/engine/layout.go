@@ -22,27 +22,30 @@ type Rect struct{ X, Y, Width, Height int }
 // Element records the layout bounds of a named view node.
 type Element struct {
 	controlPaint cssControlPaint
+	transition   cssTransition
 	disabled     bool
 	ID           string
 	Kind         string
 	Bounds       Rect
 	// Presentation-only SML metadata. The base frame stays plain text;
 	// clients opt into ANSI colors through PaintGlowFrame.
-	Glow            string
-	GlowColor       string
-	Accent          string
-	HeaderStyle     string
-	RowStyle        string
-	Animation       string
-	AnimationCurve  string
-	AnimationRepeat string
-	DurationMS      int
-	Easing          string
-	Foreground      string
-	Background      string
-	BorderColor     string
-	FGGradient      string
-	BorderGradient  string
+	Glow               string
+	GlowColor          string
+	Accent             string
+	HeaderStyle        string
+	RowStyle           string
+	Animation          string
+	AnimationCurve     string
+	AnimationRepeat    string
+	AnimationDelayMS   int
+	AnimationDirection string
+	DurationMS         int
+	Easing             string
+	Foreground         string
+	Background         string
+	BorderColor        string
+	FGGradient         string
+	BorderGradient     string
 }
 
 // Frame is a validated, positioned terminal snapshot. No I/O is performed.
@@ -165,7 +168,7 @@ func (out *layoutBlock) mark(n Node, id string, width int) {
 		Accent: n.Attr("accent", ""), HeaderStyle: n.Attr("header-style", "default"), RowStyle: n.Attr("row-style", "plain"),
 		Foreground: n.Attr("foreground", ""), Background: n.Attr("background", ""), BorderColor: n.Attr("border-color", ""),
 		FGGradient: n.Attr("foreground-gradient", ""), BorderGradient: n.Attr("border-gradient", ""),
-		Animation: n.Attr("animate", ""), AnimationCurve: n.Attr("animation-curve", ""), AnimationRepeat: n.Attr("animation-repeat", ""), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
+		Animation: n.Attr("animate", ""), AnimationCurve: n.Attr("animation-curve", ""), AnimationRepeat: n.Attr("animation-repeat", ""), AnimationDelayMS: boundedInt(n.Attr("animation-delay-ms", "0"), 0, 0, 10000), AnimationDirection: n.Attr("animation-direction", "normal"), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
 	})
 }
 func controlNode(n Node) bool {
@@ -260,11 +263,21 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		return result, nil
 	case "box":
 		childWidth, left := boxDimensions(n, width)
-		child, err := v.renderLayoutNodes(n.Children, values, childWidth, depth, path)
+		var child layoutBlock
+		var err error
+		if hasStickyHeader(n) {
+			child, err = v.renderStickyBox(n, values, childWidth, depth, path)
+		} else if n.Attr("position", "static") == "relative" {
+			child, err = v.renderPositionedBox(n, values, childWidth, depth, path)
+		} else {
+			child, err = v.renderLayoutNodes(n.Children, values, childWidth, depth, path)
+		}
 		if err != nil {
 			return result, err
 		}
-		child = clipBoxViewport(n, values, child)
+		if !hasStickyHeader(n) {
+			child = clipBoxViewport(n, values, child)
+		}
 		result.lines = boxLines(child.lines, childWidth, left)
 		offsetBlock(&result, child, left, 0)
 	case "column", "component", "screen":
@@ -545,6 +558,12 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 	if controlNode(n) {
 		element := &result.elements[len(result.elements)-1]
 		element.controlPaint = v.controlPaint(n.Kind)
+		if n.cssPaint != nil {
+			element.controlPaint = *n.cssPaint
+		}
+		if v.styles != nil {
+			element.transition = v.styles.Transitions[n.Kind]
+		}
 		element.disabled = !controlEnabled(n, values)
 	}
 	if n.Kind == "box" {

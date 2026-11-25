@@ -11,7 +11,7 @@ func validateBox(n Node) error {
 	}
 	for key, value := range n.Attrs {
 		switch key {
-		case "width", "min-width", "max-width", "flex-grow", "flex-basis", "flex-shrink", "max-height", "overflow":
+		case "width", "min-width", "max-width", "flex-grow", "flex-basis", "flex-shrink", "max-height", "overflow", "position", "left", "top", "z-index":
 			if err := validateLayoutStyleValue(key, value); err != nil {
 				return err
 			}
@@ -29,6 +29,14 @@ func validateBox(n Node) error {
 			}
 		default:
 			return fmt.Errorf("unsupported SML box attribute %q", key)
+		}
+	}
+	for _, key := range []string{"left", "top", "z-index"} {
+		if _, ok := n.Attrs[key]; ok {
+			position := n.Attr("position", "static")
+			if position != "absolute" && !(position == "sticky" && key == "top") {
+				return fmt.Errorf("%s requires absolute positioning, or sticky for top", key)
+			}
 		}
 	}
 	return nil

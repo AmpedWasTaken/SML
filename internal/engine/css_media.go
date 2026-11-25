@@ -63,6 +63,10 @@ func parseCSSMedia(selector, body string) ([]cssMediaRule, error) {
 func validateCSSMedia(styles *assetStyles) error {
 	for _, rule := range styles.Media {
 		for key, value := range rule.attr {
+			switch key {
+			case "position", "left", "top", "z-index":
+				return fmt.Errorf("positioning is not supported in media rules")
+			}
 			if !layoutStyleAttribute(key) || !layoutStyleTarget(rule.kind, key) {
 				return fmt.Errorf("unsupported media property %s on %s", key, rule.kind)
 			}

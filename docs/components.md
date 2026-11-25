@@ -367,8 +367,7 @@ table {
 The animation shorthand accepts an existing effect (`pulse`, `sweep`,
 `fade`) or a defined keyframe name, a duration (250ms–10s), an optional
 easing (`linear`, `ease-in`, `ease-out`, `ease-in-out`), and an optional
-iteration value (`1` or `infinite`). Custom keyframes currently interpolate
-brightness only; they require 0% and 100% endpoints, at most eight stops,
+iteration value (`1`–`100` or `infinite`). Brightness keyframes interpolate brightness; they require 0% and 100% endpoints, at most eight stops,
 and brightness values of 30–100%. They cannot change geometry, visibility,
 or action metadata. Only panels and tables support animation.
 
@@ -557,3 +556,360 @@ respectively. Layout uses terminal cells, not browser pixels. The
 structural renderer maintains original child paths and translates
 element bounds and hitboxes for every wrapped line. This does not
 implement browser flex-wrap reverse, order, or arbitrary positioning.
+
+### Positioned layers
+
+A box with `position: relative` establishes a local coordinate system.
+Direct child boxes with `position: absolute` are removed from the normal
+vertical flow and painted over its ordinary children.
+
+```css
+.workspace {
+    position: relative;
+}
+
+.notice {
+    position: absolute;
+    left: 12ch;
+    top: 2;
+    width: 36ch;
+    z-index: 10;
+}
+```
+
+```xml
+<screen name="workspace" version="3">
+    <box class="workspace">
+        <panel title="Workspace">
+            <text>Preferences</text>
+            <text>Appearance</text>
+            <text>Accessibility</text>
+        </panel>
+        <box class="notice">
+            <panel title="Notification" border="double">
+                <text>Preferences saved</text>
+                <button label="Dismiss" action="notice.dismiss"/>
+            </panel>
+        </box>
+    </box>
+</screen>
+```
+
+Horizontal offsets are terminal cells (0–240), vertical offsets are rows
+(0–3000), and layer order is 0–100. Equal z-index values paint in source
+order, with the later box on top. A relative box supports up to 16 absolute
+children. The layer's horizontal origin is clamped to leave at least 12
+cells in narrow terminals, and output remains subject to the 3000-row limit.
+Overlays are opaque, including whitespace. A lower hotspot that intersects
+a higher layer is removed entirely; partially obscured lower element
+paint metadata is also omitted to prevent color leaking through overlays.
+Wide graphemes crossing a layer edge are cleared as whole clusters.
+
+This is a local compositing mechanism, not a complete browser stacking
+context implementation. Absolute positioning must be on a direct box
+child of a relative box; position properties cannot be altered by media
+queries. Fixed positioning, transparent layers, focus traps and host-managed modal
+navigation are not implemented. Sticky scroll headers are described below.
+
+### Sticky scroll headers
+
+```css
+.scroll-area {
+    overflow: auto;
+    max-height: 18;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+}
+```
+
+```xml
+<screen name="activity" version="3">
+    <box class="scroll-area" scroll-key="state.scroll">
+        <box class="header">
+            <text>Recent activity</text>
+            <divider/>
+        </box>
+        <repeat source="app.messages" as="message" limit="100">
+            <text>{{message}}</text>
+        </repeat>
+    </box>
+</screen>
+```
+
+The sticky box must be the first direct child of a non-relative box
+with `overflow: auto`. Its rows remain at the top of the viewport
+while the body scrolls independently. `top` reserves rows above the
+header; the header and offset consume part of the parent's maximum
+height. The body receives the remaining height, and off-screen
+hitboxes are clipped. If the header fills the viewport, the body is
+not rendered. This is a pinned header, not general browser sticky
+positioning: arbitrary in-flow sticky elements, sticky footers and
+fixed screen positioning are not included.
+
+### CSS color transitions
+
+```css
+button {
+    color: #888888;
+    transition: color 200ms ease-in-out;
+}
+
+button:hover {
+    color: #67D9A5;
+}
+
+button:focus {
+    color: #FFFFFF;
+}
+```
+
+Transitions are supported on control component selectors. The shorthand
+accepts `color`, `foreground`, `background-color`, `background`,
+`border-color` or `all`; one duration (16ms–10s); and optional easing
+(`linear`, `ease-in`, `ease-out`, `ease-in-out`). Only explicit RGB
+endpoints interpolate; terminal defaults and gradients switch directly.
+Disabled styling takes effect immediately. Reduced-motion mode skips
+interpolation.
+
+The host supplies previous and current focus/hover IDs, elapsed time,
+and redraw scheduling. For example:
+
+```go
+rows, err := sml.PaintGlowFrame(frame, sml.GlowOptions{
+    TrueColor:         true,
+    Transition:        true,
+    PreviousHoveredID: previousID,
+    HoveredID:         currentID,
+    TransitionElapsed: elapsed,
+})
+```
+
+SML performs deterministic RGB interpolation without changing glyphs,
+bounds, hit targets or bindings. There is no internal timer or retained
+transition state. Hosts that interrupt a running transition should
+manage their own timing; this API interpolates between state endpoints,
+not arbitrary in-flight colors. Layout transitions and transition lists are not yet supported. Color
+keyframes are described below.
+
+### RGB keyframes and playback controls
+
+```css
+@keyframes aurora {
+    from { border-color: #67D9A5; }
+    50%  { border-color: #627BFF; }
+    to   { border-color: #B56CFA; }
+}
+
+panel {
+    border: double;
+    border-color: #67D9A5;
+    animation: aurora 2s ease-in-out;
+    animation-delay: 250ms;
+    animation-iteration-count: 4;
+    animation-direction: alternate;
+}
+```
+
+Each animation can interpolate one property: brightness, foreground
+(`color`), background (`background-color`), border-color or glow-color.
+RGB keyframes use explicit six-digit hex colors and two to eight distinct
+stops including 0% and 100%. All stops in a track must animate the same
+property. RGB interpolation is performed in the paint stage without
+altering frame geometry or hotspots.
+
+Playback options apply to built-in effects and custom keyframes:
+
+- `animation-delay`: 0ms–10s.
+- `animation-iteration-count`: 1–100 or infinite. Specify either this
+  property or the iteration field of the animation shorthand, not both.
+- `animation-direction`: normal, reverse, alternate, alternate-reverse.
+
+Cycle boundaries and finite final endpoints are preserved exactly;
+intermediate frames are quantized to the existing 12 FPS cadence.
+Before the delay, RGB keyframes retain static styles. No-color and
+reduced-motion modes do not animate. Host-provided phase and redraw
+scheduling remain required. Multiple concurrent animation tracks,
+named CSS colors, transform animations and arbitrary geometry
+keyframes are not implemented.
+
+### Compound selectors and specificity
+
+```css
+button {
+    border: round;
+    color: #CCCCCC;
+}
+
+.primary {
+    color: #67D9A5;
+}
+
+button.primary {
+    background-color: #14291E;
+}
+
+.primary.compact {
+    padding: 0;
+}
+
+#save {
+    color: #FFFFFF;
+}
+
+button#save.primary {
+    border: double;
+}
+```
+
+```xml
+<button id="save" class="primary compact" label="Save" action="app.save"/>
+```
+
+SMLCSS supports a component name, multiple classes and one explicit ID
+in a compound selector. Classes can be declared solely by appearing in
+a compound selector, so no empty marker rule is necessary. Grouped
+selectors also support compound rules.
+
+The cascade preserves existing behavior for backwards compatibility:
+component defaults, simple classes in markup order, matching compound
+rules by specificity, then explicit inline attributes. Specificity
+compares ID count, class count and component name in that order; ties
+are resolved by stylesheet source order. Media defaults remain below
+class, compound and inline declarations.
+
+Selectors match literal markup IDs before rendering, not generated
+repeat-instance IDs. They cannot assign IDs, action names, enabled
+conditions or other behavioral metadata. Descendant/child combinators and compound pseudo-selectors are described below. Attribute selectors are described below. Universal selectors and `!important` are not supported.
+
+### Contextual selectors and compound control states
+
+```css
+panel.workspace button {
+    color: #AAB8B0;
+}
+
+panel.workspace > button {
+    border: round;
+}
+
+panel.workspace button.primary:hover {
+    color: #67D9A5;
+}
+
+button#save.primary:focus {
+    border-color: #FFFFFF;
+}
+```
+
+A space matches a descendant; `>` matches an immediate child.
+Selector chains support up to four component/class/ID segments.
+Specificity includes every segment; equal scores use stylesheet order.
+The matcher uses source markup ancestry during asset loading, including
+component definitions in their own source tree, not dynamically expanded
+call-site ancestry.
+
+The final segment may include `:hover`, `:focus`, or `:disabled`
+when it explicitly names a supported control component. Contextual state
+rules override component-wide state rules by specificity. These rules
+can change only foreground, background or border colors; they cannot
+change layout, bindings or action metadata. State paint is determined
+at load time and applied at render time using host-provided state IDs.
+Disabled paint remains higher priority than hover and focus.
+
+This is selector chaining, not nested CSS declaration block syntax.
+Contextual media selectors, sibling combinators and `!important` are not included. Attribute selectors and explicit inheritance are described below.
+
+### Visual attribute selectors
+
+```css
+button[variant="outline"] {
+    color: #67D9A5;
+}
+
+button[border][variant=outline]:hover {
+    color: #FFFFFF;
+}
+
+panel.workspace button[variant='solid'] {
+    background-color: #14291E;
+}
+```
+
+Attribute selectors match literal source markup before any style defaults
+are applied. They support presence and exact equality on the visual
+attributes variant, tone, appearance, border, align and case. Equality
+values may be unquoted or surrounded by matching single or double
+quotes; whitespace inside brackets and substring or pattern operators
+are not supported. Each segment can have up to four attribute filters.
+Each filter contributes class-level specificity. Behavior attributes
+and dynamic bindings are deliberately excluded.
+
+### Explicit color inheritance
+
+```css
+panel.workspace {
+    color: #67D9A5;
+    background-color: #14291E;
+}
+
+panel.workspace button[variant=outline] {
+    color: inherit;
+    background-color: inherit;
+}
+```
+
+The foreground and background properties on boxes, panels, buttons
+and text may explicitly use `inherit`. They resolve to the closest
+ancestor's computed explicit RGB color in the source tree, through
+unpainted wrapper nodes. If no such color exists, the property is
+removed and normal terminal painting applies. Existing elements do
+not automatically acquire new inherited declarations; the opt-in
+keyword keeps previously published layouts compatible. The usual
+inline precedence still applies.
+
+Inheritance is resolved during asset loading, not by dynamic render
+state. Interactive state selectors require explicit RGB colors.
+Layout values, gradients and arbitrary CSS properties cannot inherit.
+
+### Mathematical terminal sizing
+
+```css
+:root {
+    --workspace-width: clamp(20ch, 80%, 96ch);
+}
+
+.workspace {
+    width: var(--workspace-width);
+}
+
+.sidebar {
+    flex-basis: min(32ch, 30%);
+    min-width: max(14ch, 15%);
+}
+
+.content {
+    width: calc(100% - 4ch);
+}
+```
+
+The width, min-width, max-width and flex-basis properties accept bounded
+`calc()`, `min()`, `max()` and `clamp()` expressions. Percentage
+lengths use available parent columns, or available flex-line columns
+when evaluating flex basis. Cell lengths use integer `ch` units; bare
+zero is also accepted. Expressions support addition and subtraction,
+two to four arguments for min/max, and exactly three for clamp.
+
+Nested functions are limited to four levels and expressions to 64 bytes.
+Individual lengths must be 0–240 cells or 0–100%. Calculations preserve
+hundredths of a cell until the final truncation to whole columns.
+The resulting size is bounded to 12–240 cells before the existing
+box and flex layout constraints are applied. A small terminal may
+still take precedence over the requested minimum.
+
+These are terminal sizing expressions, not a general scripting engine.
+Multiplication, division, decimal literals, pixel units, embedded
+variable references and arbitrary expressions are not supported.
+Whole-value design tokens can contain a sizing expression.

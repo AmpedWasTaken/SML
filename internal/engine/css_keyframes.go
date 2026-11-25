@@ -19,7 +19,12 @@ func cssMilliseconds(s string) (int, error) {
 }
 
 func cssKeyframes(body string) (string, error) {
-	var stops []brightnessStop
+	type stop struct {
+		position int
+		value    string
+	}
+	var stops []stop
+	property := ""
 	for strings.TrimSpace(body) != "" {
 		head, declarations, tail, err := cssBlock(body)
 		if err != nil {
@@ -41,12 +46,31 @@ func cssKeyframes(body string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		raw := attrs["brightness"]
-		value, err := strconv.Atoi(strings.TrimSuffix(raw, "%"))
-		if len(attrs) != 1 || err != nil || !strings.HasSuffix(raw, "%") || value < 30 || value > 100 {
-			return "", fmt.Errorf("keyframes support brightness: 30%%..100%% only")
+		if len(attrs) != 1 {
+			return "", fmt.Errorf("each keyframe must specify one animated property")
 		}
-		stops = append(stops, brightnessStop{position, value})
+		for key, value := range attrs {
+			switch key {
+			case "color":
+				key = "foreground"
+			case "background-color":
+				key = "background"
+			}
+			if property != "" && property != key {
+				return "", fmt.Errorf("all keyframes must animate the same property")
+			}
+			property = key
+			if key == "brightness" {
+				n, err := strconv.Atoi(strings.TrimSuffix(value, "%"))
+				if err != nil || !strings.HasSuffix(value, "%") || n < 30 || n > 100 {
+					return "", fmt.Errorf("brightness must be 30%%..100%%")
+				}
+				value = strconv.Itoa(n)
+			} else if !colorKeyframeProperty(key) || !validHexColor(value) {
+				return "", fmt.Errorf("unsupported color keyframe %s=%q", key, value)
+			}
+			stops = append(stops, stop{position, value})
+		}
 		if len(stops) > 8 {
 			return "", fmt.Errorf("too many keyframe stops")
 		}
@@ -54,11 +78,18 @@ func cssKeyframes(body string) (string, error) {
 	sort.Slice(stops, func(i, j int) bool { return stops[i].position < stops[j].position })
 	parts := make([]string, len(stops))
 	for i, s := range stops {
-		parts[i] = fmt.Sprintf("%d:%d", s.position, s.brightness)
+		parts[i] = fmt.Sprintf("%d:%s", s.position, s.value)
 	}
 	curve := strings.Join(parts, ",")
-	if _, err := parseBrightnessCurve(curve); err != nil {
-		return "", err
+	if property == "brightness" {
+		if _, err := parseBrightnessCurve(curve); err != nil {
+			return "", err
+		}
+	} else {
+		curve = property + "|" + curve
+		if _, _, err := parseColorCurve(curve); err != nil {
+			return "", err
+		}
 	}
 	return curve, nil
 }
@@ -98,4 +129,12 @@ func keyframeStrength(curve string, progress float64) float64 {
 		}
 	}
 	return float64(stops[len(stops)-1].brightness) / 100
+}
+
+func cssDelayMilliseconds(value string) (int, error) {
+	delay, err := time.ParseDuration(value)
+	if err != nil || delay < 0 || delay > 10*time.Second || delay%time.Millisecond != 0 {
+		return 0, fmt.Errorf("animation delay must be 0ms..10s")
+	}
+	return int(delay / time.Millisecond), nil
 }

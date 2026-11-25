@@ -177,6 +177,10 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 	case "heatmap", "bar-chart", "stacked-bar", "waveform", "kpi", "activity-feed":
 		return renderDashboardWidget(n, values, width), nil
 	case "box":
+		if n.Attr("position", "static") == "relative" || hasStickyHeader(n) {
+			block, err := v.renderLayoutNode(n, values, width, depth, "legacy:positioned")
+			return block.lines, err
+		}
 		childWidth, left := boxDimensions(n, width)
 		lines, err := v.lines(n.Children, values, childWidth, depth)
 		if err != nil {

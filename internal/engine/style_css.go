@@ -135,7 +135,18 @@ func parseStyleCSS(source string) (assetStyles, error) {
 		for _, part := range selectors {
 			part = strings.TrimSpace(part)
 			var target map[string]string
-			if strings.Contains(part, ":") {
+			if strings.ContainsAny(part, " >[\t\n\r") || (strings.Contains(part, ":") && strings.ContainsAny(part, ".#")) {
+				rule, err := parseContextSelector(part)
+				if err != nil {
+					return out, err
+				}
+				rule.attr = make(map[string]string, len(attrs))
+				out.Compound = append(out.Compound, rule)
+				if len(out.Compound) > 128 {
+					return out, fmt.Errorf("too many compound selectors")
+				}
+				target = rule.attr
+			} else if strings.Contains(part, ":") {
 				if _, _, err := cssStateSelector(part); err != nil {
 					return out, err
 				}
@@ -143,6 +154,17 @@ func parseStyleCSS(source string) (assetStyles, error) {
 					out.States[part] = map[string]string{}
 				}
 				target = out.States[part]
+			} else if strings.Contains(part, "#") || strings.Count(part, ".") > 1 || (strings.Contains(part, ".") && !strings.HasPrefix(part, ".")) {
+				rule, err := parseCompoundSelector(part)
+				if err != nil {
+					return out, err
+				}
+				rule.attr = make(map[string]string, len(attrs))
+				out.Compound = append(out.Compound, rule)
+				if len(out.Compound) > 128 {
+					return out, fmt.Errorf("too many compound selectors")
+				}
+				target = rule.attr
 			} else if strings.HasPrefix(part, ".") {
 				name := part[1:]
 				if !validName.MatchString(name) {
@@ -166,11 +188,36 @@ func parseStyleCSS(source string) (assetStyles, error) {
 			}
 		}
 	}
+	out.Transitions = make(map[string]cssTransition)
+	for kind, attrs := range out.Defaults {
+		if value, ok := attrs["transition"]; ok {
+			if _, _, err := cssStateSelector(kind + ":hover"); err != nil {
+				return out, err
+			}
+			if strings.HasPrefix(value, "@") {
+				value = out.Tokens[value[1:]]
+			}
+			spec, err := parseCSSTransition(value)
+			if err != nil {
+				return out, err
+			}
+			out.Transitions[kind] = spec
+			delete(attrs, "transition")
+			if len(attrs) == 0 {
+				delete(out.Defaults, kind)
+			}
+		}
+	}
 	for _, group := range []map[string]map[string]string{out.Classes, out.Defaults, out.States} {
 		for _, attrs := range group {
 			if err := normalizeCSS(attrs, out.Tokens, keyframes); err != nil {
 				return out, err
 			}
+		}
+	}
+	for _, rule := range out.Compound {
+		if err := normalizeCSS(rule.attr, out.Tokens, keyframes); err != nil {
+			return out, err
 		}
 	}
 	for _, rule := range out.Media {
@@ -247,6 +294,9 @@ func normalizeCSS(attrs, tokens, keyframes map[string]string) error {
 		attrs["animate"], attrs["duration-ms"] = parts[0], strconv.Itoa(ms)
 		if curve := keyframes[parts[0]]; curve != "" {
 			attrs["animate"], attrs["animation-curve"] = "keyframes", curve
+			if strings.Contains(curve, "|") {
+				attrs["animate"] = "color-keyframes"
+			}
 		} else if parts[0] != "pulse" && parts[0] != "sweep" && parts[0] != "fade" {
 			return fmt.Errorf("unknown SMLCSS animation %q", parts[0])
 		}
@@ -258,7 +308,28 @@ func normalizeCSS(attrs, tokens, keyframes map[string]string) error {
 		}
 		delete(attrs, "animation")
 	}
-	for _, key := range []string{"width", "min-width", "max-width", "gap", "row-gap", "collapse-below", "padding", "flex-basis"} {
+	if value, ok := attrs["animation-delay"]; ok {
+		if _, exists := attrs["animation-delay-ms"]; exists {
+			return fmt.Errorf("conflicting animation delay properties")
+		}
+		if strings.HasPrefix(value, "@") {
+			value = tokens[value[1:]]
+		}
+		delay, err := cssDelayMilliseconds(value)
+		if err != nil {
+			return err
+		}
+		attrs["animation-delay-ms"] = strconv.Itoa(delay)
+		delete(attrs, "animation-delay")
+	}
+	if value, ok := attrs["animation-iteration-count"]; ok {
+		if _, exists := attrs["animation-repeat"]; exists {
+			return fmt.Errorf("conflicting animation iteration properties")
+		}
+		attrs["animation-repeat"] = value
+		delete(attrs, "animation-iteration-count")
+	}
+	for _, key := range []string{"width", "min-width", "max-width", "gap", "row-gap", "collapse-below", "padding", "flex-basis", "left"} {
 		if v, ok := attrs[key]; ok {
 			attrs[key] = strings.TrimSuffix(v, "ch")
 		}

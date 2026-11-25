@@ -20,6 +20,11 @@ type GlowOptions struct {
 	ReducedMotion bool
 	FocusedID     string
 	HoveredID     string
+	// Transitions interpolate between host-provided previous and current states.
+	Transition        bool
+	PreviousFocusedID string
+	PreviousHoveredID string
+	TransitionElapsed time.Duration
 }
 
 type glowInk struct {
@@ -95,7 +100,7 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 	// so each nested table keeps its own accent instead of inheriting and
 	// overwriting all its borders with the outer panel's glow color.
 	for i := len(frame.Elements) - 1; i >= 0; i-- {
-		element := frame.Elements[i].withControlPaint(opts)
+		element := frame.Elements[i].withTransitionPaint(opts).withColorKeyframes(opts)
 		if element.Foreground != "" || element.Background != "" || element.BorderColor != "" || element.FGGradient != "" || element.BorderGradient != "" {
 			x0, y0, x1, y1, ok := glowBounds(frame, element)
 			if ok {
@@ -119,7 +124,7 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 						if hasBG {
 							inks[y][x].bg = glowSGR(bg, true)
 						}
-						if (element.Kind == "panel" || element.Kind == "input" || (element.Bounds.Height == 3 && (element.Kind == "button" || element.Kind == "link" || element.Kind == "plugin-action" || element.Kind == "toggle" || element.Kind == "choice" || element.Kind == "number"))) && (x == x0 || x == x1-1 || y == y0 || y == y1-1) && glowStroke(cell.Grapheme) {
+						if (element.Kind == "panel" || element.Kind == "table" || element.Kind == "input" || (element.Bounds.Height == 3 && (element.Kind == "button" || element.Kind == "link" || element.Kind == "plugin-action" || element.Kind == "toggle" || element.Kind == "choice" || element.Kind == "number"))) && (x == x0 || x == x1-1 || y == y0 || y == y1-1) && glowStroke(cell.Grapheme) {
 							if hasStroke {
 								inks[y][x].fg = glowSGR(stroke, false)
 							}
@@ -136,7 +141,7 @@ func PaintGlowFrame(frame Frame, opts GlowOptions) ([]string, error) {
 		if element.Kind != "panel" && element.Kind != "table" {
 			continue
 		}
-		if element.Glow == "none" && element.Accent == "" && element.HeaderStyle == "default" && element.RowStyle == "plain" && element.Animation == "" {
+		if element.Glow == "none" && element.Accent == "" && element.HeaderStyle == "default" && element.RowStyle == "plain" && (element.Animation == "" || element.Animation == "color-keyframes") {
 			continue
 		}
 		x0, y0, x1, y1, ok := glowBounds(frame, element)
