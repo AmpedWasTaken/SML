@@ -21,6 +21,8 @@ type Rect struct{ X, Y, Width, Height int }
 
 // Element records the layout bounds of a named view node.
 type Element struct {
+	controlPaint cssControlPaint
+	disabled     bool
 	ID     string
 	Kind   string
 	Bounds Rect
@@ -531,6 +533,11 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		return layoutBlock{}, errors.New("SML render output exceeds limit")
 	}
 	result.mark(n, id, width)
+	if controlNode(n) {
+		element := &result.elements[len(result.elements)-1]
+		element.controlPaint = v.controlPaint(n.Kind)
+		element.disabled = !controlEnabled(n, values)
+	}
 	if n.Kind == "box" {
 		childWidth, left := boxDimensions(n, width)
 		result.elements[len(result.elements)-1].Bounds.X = left
