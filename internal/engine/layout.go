@@ -262,7 +262,9 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		childWidth, left := boxDimensions(n, width)
 		var child layoutBlock
 		var err error
-		if n.Attr("position", "static") == "relative" {
+		if hasStickyHeader(n) {
+			child, err = v.renderStickyBox(n, values, childWidth, depth, path)
+		} else if n.Attr("position", "static") == "relative" {
 			child, err = v.renderPositionedBox(n, values, childWidth, depth, path)
 		} else {
 			child, err = v.renderLayoutNodes(n.Children, values, childWidth, depth, path)
@@ -270,7 +272,9 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 		if err != nil {
 			return result, err
 		}
-		child = clipBoxViewport(n, values, child)
+		if !hasStickyHeader(n) {
+			child = clipBoxViewport(n, values, child)
+		}
 		result.lines = boxLines(child.lines, childWidth, left)
 		offsetBlock(&result, child, left, 0)
 	case "column", "component", "screen":
