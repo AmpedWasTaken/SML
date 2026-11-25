@@ -182,7 +182,8 @@ func (v View) node(n Node, values map[string]string, width, depth int) ([]string
 		if err != nil {
 			return nil, err
 		}
-		return boxLines(lines, childWidth, left), nil
+		start, end := boxViewport(n, values, len(lines))
+		return boxLines(lines[start:end], childWidth, left), nil
 	case "screen", "component", "column":
 		return v.lines(n.Children, values, width, depth)
 	case "section":
