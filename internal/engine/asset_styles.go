@@ -14,6 +14,7 @@ import (
 // assetStyles is an optional shared, inert presentation stylesheet.
 // Classes may set only recognized visual attributes; never action metadata.
 type assetStyles struct {
+	States   map[string]map[string]string `json:"-"`
 	Media    []cssMediaRule                `json:"-"`
 	Tokens   map[string]string            `json:"tokens"`
 	Classes  map[string]map[string]string `json:"classes"`
@@ -99,6 +100,9 @@ func loadAssetStyles(dir string) (*assetStyles, error) {
 		}
 	}
 	if err := validateCSSMedia(&styles); err != nil {
+		return nil, err
+	}
+	if err := validateCSSStates(&styles); err != nil {
 		return nil, err
 	}
 	return &styles, nil
