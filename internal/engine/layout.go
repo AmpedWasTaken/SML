@@ -32,6 +32,8 @@ type Element struct {
 	HeaderStyle    string
 	RowStyle       string
 	Animation      string
+	AnimationCurve string
+	AnimationRepeat string
 	DurationMS     int
 	Easing         string
 	Foreground     string
@@ -161,7 +163,7 @@ func (out *layoutBlock) mark(n Node, id string, width int) {
 		Accent: n.Attr("accent", ""), HeaderStyle: n.Attr("header-style", "default"), RowStyle: n.Attr("row-style", "plain"),
 		Foreground: n.Attr("foreground", ""), Background: n.Attr("background", ""), BorderColor: n.Attr("border-color", ""),
 		FGGradient: n.Attr("foreground-gradient", ""), BorderGradient: n.Attr("border-gradient", ""),
-		Animation: n.Attr("animate", ""), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
+		Animation: n.Attr("animate", ""), AnimationCurve: n.Attr("animation-curve", ""), AnimationRepeat: n.Attr("animation-repeat", ""), DurationMS: boundedInt(n.Attr("duration-ms", "1800"), 1800, 250, 10000), Easing: n.Attr("easing", "ease-in-out"),
 	})
 }
 func controlNode(n Node) bool {
@@ -391,11 +393,18 @@ func (v View) renderLayoutNode(n Node, values map[string]string, width, depth in
 				parts = append(parts, locatedBlock{block: child, x: x})
 				x += childWidth + gap
 			}
+			for i := range parts {
+				switch n.Attr("align-items","start") {
+				case "center": parts[i].y = (h-len(parts[i].block.lines))/2
+				case "end": parts[i].y = h-len(parts[i].block.lines)
+				}
+			}
 			rendered := renderCanvas(width, h, parts)
+			if start > 0 { result.lines = append(result.lines, make([]string, boundedInt(n.Attr("row-gap","0"),0,0,8))...) }
 			baseY := len(result.lines)
 			result.lines = append(result.lines, rendered...)
 			for _, part := range parts {
-				offsetBlock(&result, part.block, part.x, baseY)
+				offsetBlock(&result, part.block, part.x, baseY+part.y)
 			}
 			if len(result.lines) > 3000 {
 				return layoutBlock{}, errors.New("SML layout exceeds output limit")
