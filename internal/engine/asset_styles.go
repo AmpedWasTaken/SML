@@ -15,9 +15,9 @@ import (
 // Classes may set only recognized visual attributes; never action metadata.
 type assetStyles struct {
 	Transitions map[string]cssTransition     `json:"-"`
-	States      map[string]map[string]string            `json:"-"`
+	States      map[string]map[string]string `json:"-"`
 	Media       []cssMediaRule               `json:"-"`
-	Tokens      map[string]string             `json:"tokens"`
+	Tokens      map[string]string            `json:"tokens"`
 	Classes     map[string]map[string]string `json:"classes"`
 	Defaults    map[string]map[string]string `json:"defaults"`
 }
