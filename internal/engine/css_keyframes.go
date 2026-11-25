@@ -130,3 +130,11 @@ func keyframeStrength(curve string, progress float64) float64 {
 	}
 	return float64(stops[len(stops)-1].brightness) / 100
 }
+
+func cssDelayMilliseconds(value string) (int, error) {
+	delay, err := time.ParseDuration(value)
+	if err != nil || delay < 0 || delay > 10*time.Second || delay%time.Millisecond != 0 {
+		return 0, fmt.Errorf("animation delay must be 0ms..10s")
+	}
+	return int(delay / time.Millisecond), nil
+}
